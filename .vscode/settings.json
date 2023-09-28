@@ -1,0 +1,6 @@
+{
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "adafruit_lsm9ds1.h": "c"
+    }
+}
