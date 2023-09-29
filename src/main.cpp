@@ -4,17 +4,21 @@
 #include "SD.h"
 #include <SPI.h>
 #include <Adafruit_LSM9DS1.h>
+#include <HardwareSerial.h>
 
 float t;
 
 const int8_t XG_CS = 25;
 const int8_t M_CS = 26;
 const uint8_t SDCARD_CS = 5;
-static constexpr double DEGREES_PER_RADIAN =
-      (180.0 / 3.141592653589793238463);
+
+String latitude, longitude;
+bool hasFix = false;
+int sats = 0;
 
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1(XG_CS, M_CS);
 sensors_event_t a, m, g, temp;
+HardwareSerial GPS_Serial(2);
 
 File logFile;
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
@@ -22,10 +26,13 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 // function declarations here:
 void setupSD();
 void setupLSM();
+void setupGPS();
 void readLSM();
-void logLSM();
-void printLSM();
+void readGPS();
+void logSerial();
+void logSD();
 void setNextAvailableFilePath();
+void parseGPGGA(String data);
 
 void setup() {
   Serial.begin(115200);
@@ -35,14 +42,16 @@ void setup() {
   }
 
   setupLSM();
+  setupGPS();
   setupSD();
 }
 
 void loop() {
-  delay(10);
+  delay(13); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
   readLSM();
-  logLSM();
-  printLSM();
+  readGPS();
+  logSD();
+  logSerial();
 }
 
 // function definitions here:
@@ -108,7 +117,7 @@ void setupSD()
   if (logFile) {
     Serial.printf("Logging to %s", logFilePath);
     Serial.println();
-    if(!logFile.println("time, ax, ay, az, mx, my, mz, gx, gy, gz"))
+    if(!logFile.println("time, ax, ay, az, mx, my, mz, gx, gy, gz, lat, lon, fix, sats"))
     {
       Serial.println("Logging Failed.");
     }
@@ -121,12 +130,22 @@ void setupSD()
   }
 }
 
-void logLSM() {
+void setupGPS() {
+  Serial.print("Initializing GPS...");
+  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
+  while(!GPS_Serial) {
+    delay(1);
+  }
+}
+
+void logSD() {
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
-    if(!logFile.printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n", t, a.acceleration.x, a.acceleration.y, a.acceleration.z,
-                                                                       m.magnetic.x, m.magnetic.y, m.magnetic.z,
-                                                                       g.gyro.x, g.gyro.y, g.gyro.z))
+    if(!logFile.printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %d, %d\n",
+                       t, a.acceleration.x, a.acceleration.y, a.acceleration.z,
+                       m.magnetic.x, m.magnetic.y, m.magnetic.z,
+                       g.gyro.x, g.gyro.y, g.gyro.z,
+                       latitude.c_str(), longitude.c_str(), hasFix, sats))
     {
       Serial.println("Logging Failed.");
     }
@@ -135,7 +154,7 @@ void logLSM() {
     Serial.printf("Failed to open %s", logFilePath);
     Serial.println();
   }
-} 
+}
 
 void readLSM() {
   lsm.read();  /* ask it to read in the data */ 
@@ -143,9 +162,9 @@ void readLSM() {
   /* Get a new sensor event */ 
   t = millis()/1000.0;
   lsm.getEvent(&a, &m, &g, &temp);
-} 
+}
 
-void printLSM() {
+void logSerial() {
   t = millis()/1000.0;
   // Write all values to the console with tabs in between them
   Serial.print(t); // Assuming t is program time in seconds. This can be plotted on the x-axis!
@@ -174,7 +193,24 @@ void printLSM() {
   Serial.print("\t");
   Serial.print(g.gyro.z);          // Gyro Z
 
+  // GPS data
+  Serial.print("\t");
+  Serial.print(latitude);          // GPS Latitude
+  Serial.print("\t");
+  Serial.print(longitude);         // GPS Longitude
+  Serial.print("\t");
+  Serial.print(hasFix);            // GPS Fix
+  Serial.print("\t");
+  Serial.print(sats);          // GPS Satalites
+
   Serial.println(); // Finish with a newline
+}
+
+void readGPS() {
+  while(GPS_Serial.available()) {
+    String gpsData = GPS_Serial.readStringUntil('\n');
+    parseGPGGA(gpsData);
+  }
 }
 
 void setNextAvailableFilePath() {
@@ -193,4 +229,46 @@ void setNextAvailableFilePath() {
             fileNumber++;
         }
     }
+}
+
+void parseGPGGA(String data) {
+  if (data.startsWith("$GPGGA")) {
+    // Split the data using commas
+    int maxFields = 15;  // GPGGA has a maximum of 15 fields
+    String fields[maxFields];
+    int fieldCount = 0;
+    
+    int start = 0;
+    int pos = data.indexOf(',');
+    while (pos != -1 && fieldCount < maxFields) {
+      fields[fieldCount] = data.substring(start, pos);
+      fieldCount++;
+      
+      start = pos + 1;
+      pos = data.indexOf(',', start);
+    }
+    if (start < data.length() && fieldCount < maxFields) {
+      fields[fieldCount++] = data.substring(start);
+    }
+
+    // Extract latitude and longitude if available
+    if (fieldCount > 4 && fields[2].length() > 0 && fields[4].length() > 0) {
+      latitude = fields[2];
+      longitude = fields[4];
+    } else {
+      latitude = "";
+      longitude = "";
+    }
+
+    // Extract fix status and satellite count
+    if (fieldCount > 6) {
+      int fix = fields[6].toInt();
+      hasFix = (fix > 0);
+
+      sats = fields[7].toInt();
+    } else {
+      hasFix = false;
+      sats = 0;
+    }
+  }
 }

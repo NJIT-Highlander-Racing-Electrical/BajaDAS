@@ -37,6 +37,6 @@ Where:
 
 ## Future Enhancements
 - [ ] **CAN Bus Protocol Support**: To integrate with the CAN bus system for richer datasets.
-- [ ] **GPS Integration**: To correlate vehicle dynamics with location data.
+- [x] **GPS Integration**: To log location data.
 - [ ] **Over-the-Air Updates**: Implementing OTA for streamlined system updates.
 - [ ] **Advanced Data Analytics**: Enhanced tools for in-depth data interpretation.
