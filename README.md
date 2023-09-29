@@ -29,6 +29,7 @@ A Data Acquisition System (DAS) tailored for Baja vehicles, built for the ESP32 
 ## Data Format
 The logged data adopts the following format:
 `time, ax, ay, az, mx, my, mz, gx, gy, gz`
+
 Where:
 - `time`: Timestamp (in seconds since the program started)
 - `ax`, `ay`, `az`: Acceleration in X, Y, and Z axes, respectively
