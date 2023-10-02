@@ -1,43 +1,39 @@
-# bajaDAS
+# BajaDAS: Data Acquisition System for Highlander Racing
 
-A Data Acquisition System (DAS) tailored for Baja vehicles, built for the ESP32 microcontroller. This system leverages the LSM9DS1 sensor to gather 9DOF data, including acceleration, magnetometer, and gyroscope readings. The acquired data is then logged onto an SD card in CSV format.
+BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
-## Hardware Prerequisites
-- ESP32 Microcontroller
-- LSM9DS1 sensor module
-- SD card module with an SD card inserted
+## Features
 
-## Key Features
-1. **9DOF Data Collection**: Uses the LSM9DS1 sensor to obtain:
-   - Acceleration data in X, Y, and Z axes
-   - Magnetometer readings in X, Y, and Z axes
-   - Gyroscopic data in X, Y, and Z axes
-2. **SD Card Logging**: Data is stored on an SD card in CSV format. The system intelligently checks for existing files and increments file numbers to avoid overwriting previous data logs.
-3. **Real-time Monitoring**: The system outputs real-time sensor data via the Serial console, facilitating immediate diagnostics.
-4. **Error Handling**: Comprehensive error messages are provided through the Serial console in case of LSM9DS1 sensor or SD card initialization failures.
-5. **Configurable Sensor Sensitivity**: The system allows for configurable sensitivity and ranges for the accelerometer, magnetometer, and gyroscope.
+- **9-DOF Sensor**: Gathers acceleration, magnetic field, gyroscope, and temperature data via the `Adafruit_LSM9DS1` sensor.
+- **GPS Integration**: Records GPS data, specifically latitude, longitude, fix status, and satellite count.
+- **SD Card Logging**: Logs data to an SD card in CSV format.
+- **Serial Logging**: Outputs sensor readings to the serial console for live monitoring.
+- **CAN Bus Support**: Architecture in place for CAN bus communication (not fully implemented in the provided code).
 
-## Usage
-1. **Installation**:
-   - Ensure the necessary libraries (`Wire`, `FS`, `SD`, `SPI`, and `Adafruit_LSM9DS1`) are installed on your development environment.
-   - Connect the LSM9DS1 sensor and SD card module to the ESP32 via SPI.
-   - Upload the `bajaDAS` code to the microcontroller.
-2. **Operation**:
-   - On powering up, the system initializes the sensor and SD card.
-   - Sensor data is read at regular intervals, logged to the SD card, and simultaneously displayed on the Serial console.
+## Dependencies
 
-## Data Format
-The logged data adopts the following format:
-`time, ax, ay, az, mx, my, mz, gx, gy, gz`
+To use BajaDAS, ensure the following libraries are installed:
 
-Where:
-- `time`: Timestamp (in seconds since the program started)
-- `ax`, `ay`, `az`: Acceleration in X, Y, and Z axes, respectively
-- `mx`, `my`, `mz`: Magnetometer readings in X, Y, and Z axes, respectively
-- `gx`, `gy`, `gz`: Gyroscopic data in X, Y, and Z axes, respectively
+- `Arduino.h`
+- `Wire.h`
+- `FS.h`
+- `SD.h`
+- `SPI.h`
+- `Adafruit_LSM9DS1.h`
+- `HardwareSerial.h`
+- `mcp_can.h`
 
-## Future Enhancements
-- [ ] **CAN Bus Protocol Support**: To integrate with the CAN bus system for richer datasets.
-- [x] **GPS Integration**: To log location data.
-- [ ] **Over-the-Air Updates**: Implementing OTA for streamlined system updates.
-- [ ] **Advanced Data Analytics**: Enhanced tools for in-depth data interpretation.
+## Hardware Setup
+
+- **Microcontroller**: Designed for Arduino-compatible boards with multiple hardware serial interfaces and SPI capabilities.
+- **SD Card**: MicroSD card slot for data logging. Ensure it's formatted correctly.
+- **Sensors**: Adafruit LSM9DS1 9-DOF sensor and a GPS module.
+
+## Quick Start
+
+1. Install the necessary libraries via the Arduino IDE's Library Manager or manually.
+2. Connect the LSM9DS1 and GPS modules to the specified pins.
+3. Insert a formatted SD card.
+4. Upload the `BajaDAS` code to your microcontroller.
+5. Use the Serial Monitor at a `115200` baud rate to view data.
+6. Post-race, retrieve the SD card and access the `.csv` files for analysis.
