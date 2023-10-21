@@ -29,6 +29,19 @@ To use BajaDAS, ensure the following libraries are installed:
 - **SD Card**: MicroSD card slot for data logging. Ensure it's formatted correctly.
 - **Sensors**: Adafruit LSM9DS1 9-DOF sensor and a GPS module.
 
+## GPS Information
+
+* GPS System that tracks vehicle location (latitude and longitude) as well as reporting other information like time and date
+
+### GPS Design Goals
+
+* CAN-Bus integration to report latitude, longitude, time, and date (using TJA1051T CAN Transceiver)
+* Should we use GoouuuTech GT-U7 module that we have with active antenna, or buy a new one like an M10Q and use without active antenna? Pros/Cons?
+* Voltage regulator
+* Custom PCB
+* ESP32
+
+
 ## Quick Start
 
 1. Install the necessary libraries via the Arduino IDE's Library Manager or manually.
