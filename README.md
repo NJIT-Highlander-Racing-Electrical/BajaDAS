@@ -8,7 +8,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 - **GPS Integration**: Records GPS data, specifically latitude, longitude, fix status, and satellite count.
 - **SD Card Logging**: Logs data to an SD card in CSV format.
 - **Serial Logging**: Outputs sensor readings to the serial console for live monitoring.
-- **CAN Bus Support**: Architecture in place for CAN bus communication (not fully implemented in the provided code).
+- **CAN Bus Support**: Architecture in place for CAN bus communication (not fully implemented in the provided code) (using TJA1051T CAN Transceiver).
 
 ## Dependencies
 
@@ -35,7 +35,7 @@ To use BajaDAS, ensure the following libraries are installed:
 
 ### GPS Design Goals
 
-* CAN-Bus integration to report latitude, longitude, time, and date (using TJA1051T CAN Transceiver)
+* CAN-Bus integration to report latitude, longitude, time, and date
 * Should we use GoouuuTech GT-U7 module that we have with active antenna, or buy a new one like an M10Q and use without active antenna? Pros/Cons?
 * Voltage regulator
 * Custom PCB
