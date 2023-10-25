@@ -9,6 +9,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 - **SD Card Logging**: Logs data to an SD card in CSV format.
 - **Serial Logging**: Outputs sensor readings to the serial console for live monitoring.
 - **CAN Bus Support**: Architecture in place for CAN bus communication (not fully implemented in the provided code) (using TJA1051T CAN Transceiver).
+- **Connection Modularity**: Screw Terminals on DAQ PCB so that additional modules can be connected to the microcontroller in the future
 
 ## Dependencies
 
