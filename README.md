@@ -44,7 +44,7 @@ To use BajaDAS, ensure the following libraries are installed:
 * Custom PCB
 * ESP32
 
-### Fuel Sensor
+## Fuel Sensor
 
 * The fuel sensor is integrated into the DAS for the following reasons:
      * It is physically close to the DAS and a simple circuit with few wires
