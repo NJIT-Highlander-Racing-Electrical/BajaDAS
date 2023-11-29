@@ -11,6 +11,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 - **CAN Bus Support**: Architecture in place for CAN bus communication (not fully implemented in the provided code) (using TJA1051T CAN Transceiver).
 - **Connection Modularity**: Screw Terminals on DAQ PCB so that additional modules can be connected to the microcontroller in the future
 - **2WD/4WD State**: Receives input signals from 2WD/4WD switch about what mode the vehicle is in, and forwards this data to the dashboard via CAN-Bus
+- **Fuel Sensor**: Integrates the fuel sensor and data storage as a part of the DAS
 
 ## Dependencies
 
@@ -43,6 +44,13 @@ To use BajaDAS, ensure the following libraries are installed:
 * Custom PCB
 * ESP32
 
+### Fuel Sensor
+
+* The fuel sensor is integrated into the DAS for the following reasons:
+     * It is physically close to the DAS and a simple circuit with few wires
+     * It does not require complex math or data processing
+     * A fuel reset switch can be embedded into the DAS enclosure
+     * The SD Card on the DAS can also include a file with the last known fuel level for when the vehicle is powered back on 
 
 ## Quick Start
 
