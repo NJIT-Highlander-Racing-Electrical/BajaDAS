@@ -50,6 +50,7 @@ To use BajaDAS, ensure the following libraries are installed:
      * It is physically close to the DAS and a simple circuit with few wires
      * It does not require complex math or data processing
      * A fuel reset switch can be embedded into the DAS enclosure
+     * There also needs to be a DAQ recording on/off switch
      * The SD Card on the DAS can also include a file with the last known fuel level for when the vehicle is powered back on 
 
 ## Quick Start
