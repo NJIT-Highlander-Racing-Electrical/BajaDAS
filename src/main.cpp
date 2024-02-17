@@ -6,6 +6,8 @@
 #include <Adafruit_LSM9DS1.h>
 #include <HardwareSerial.h>
 
+
+
 float t;
 
 const int8_t XG_CS = 25;
@@ -58,7 +60,16 @@ void loop() {
 
 void setupLSM()
 {
-  Serial.print("Initializing LSM9DS1...");
+  // Pinout as follows:
+  // VIN to esp32 3v3
+  // 3v3 not used
+  // GND to esp32 GND
+  // SCL to esp32 VSPI CLK
+  // SDA to esp32 VSPI MOSI
+  // CSAG to esp32 D25
+  // CSM to esp32 D26
+  // SDOAG & SDOM tied together to VSPI MISO
+  Serial.print("Initializing LSM9DS1... ");
   if (!lsm.begin())
   {
     Serial.println("Oops ... unable to initialize the LSM9DS1.");
@@ -86,9 +97,9 @@ void setupLSM()
 
 void setupSD()
 {
-  Serial.print("Initializing SD card...");
+  Serial.print("Initializing SD card... ");
   if (!SD.begin(SDCARD_CS)) {
-    Serial.println("Oops ... unable to initialize the SD card.");
+    Serial.println("Oops... unable to initialize the SD card.");
     while (1);
   }
 
@@ -131,11 +142,12 @@ void setupSD()
 }
 
 void setupGPS() {
-  Serial.print("Initializing GPS...");
+  Serial.print("Initializing GPS... ");
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
   while(!GPS_Serial) {
     delay(1);
   }
+  Serial.println("Found GPS");
 }
 
 void logSD() {
