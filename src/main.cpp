@@ -1,3 +1,13 @@
+// NJIT Highlander Racing - Electrical Subteam
+
+// BajaDAS 2024
+// Shahnawaz Haque & Alexander Huegler
+
+
+#define TX_GPIO_NUM 22  // Connects to CTX
+#define RX_GPIO_NUM 4  // Connects to CRX
+
+#include <CAN.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include "FS.h"
@@ -6,22 +16,56 @@
 #include <Adafruit_LSM9DS1.h>
 #include <HardwareSerial.h>
 
+// data variables
+int cvtPrimaryRPM = 0;
+int cvtSecondaryRPM = 0;
+int cvtTemp = false;
 
+int gasPedalDepression = 0;
+int brakePedalDepression = 0;
+int steeringWheelPosition = 0;
 
+int fuelLevel = 0;
+
+bool bmsLowPowerWarning = false;
+
+float gpsLatitude = 0.0;
+float gpsLongitude = 0.0;
+float gpsTime = 0.0;
+float gpsDate = 0.0;
+
+bool dasEnabled = true;
+bool engagementState = false;
+
+// time from program start in seconds
 float t;
 
+// UTC time of gps observation (hours/minutes/seconds.decimal-seconds)
+String timedat = "init";
+
+// chip selects
 const int8_t XG_CS = 25;
 const int8_t M_CS = 26;
+
 const uint8_t SDCARD_CS = 5;
 
+// drive state switch variables
+bool driveState; // true when in 4WD and false in 2WD
+
+// gps initialization variables
 String latitude, longitude;
+HardwareSerial GPS_Serial(2);
 bool hasFix = false;
 int sats = 0;
 
+// LSM9DS1 variables
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1(XG_CS, M_CS);
 sensors_event_t a, m, g, temp;
-HardwareSerial GPS_Serial(2);
 
+// last observed drive state 
+String lastState;
+
+// log file setup
 File logFile;
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
 
@@ -29,29 +73,63 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 void setupSD();
 void setupLSM();
 void setupGPS();
+void setupSwitch();
+
 void readLSM();
+String readSwitch();
 void readGPS();
-void logSerial();
-void logSD();
-void setNextAvailableFilePath();
+
 void parseGPGGA(String data);
 
-void setup() {
-  Serial.begin(115200);
+void updateCanbus();
 
+void logSerial();
+void logSD();
+
+void setNextAvailableFilePath();
+
+void setup() {
+
+  // start serial and wait for it to connect
+  Serial.begin(115200);
   while(!Serial) {
     delay(1);
   }
 
-  setupLSM();
-  setupGPS();
+  
+  CAN.setPins(RX_GPIO_NUM, TX_GPIO_NUM);
+
+  if (!CAN.begin(1000E3)) {
+    Serial.println("Starting CAN failed!");
+    while (1)
+      ;
+  } else {
+    Serial.println("CAN Initialized");
+  }
+
+  // setup connections to various modules
   setupSD();
+  setupLSM();
+  setupSwitch();
+  setupGPS();
 }
 
 void loop() {
   delay(13); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
+             // amount of functions per loop has changed since this number was picked, so changing it should be possible
+
+  // update all global data variables from CAN-Bus
+  updateCanbus();
+
+
+  // read data from modules
   readLSM();
   readGPS();
+
+  // observe drive state
+  lastState = readSwitch();
+
+  // log data to microsd card and serial connection
   logSD();
   logSerial();
 }
@@ -60,20 +138,11 @@ void loop() {
 
 void setupLSM()
 {
-  // Pinout as follows:
-  // VIN to esp32 3v3
-  // 3v3 not used
-  // GND to esp32 GND
-  // SCL to esp32 VSPI CLK
-  // SDA to esp32 VSPI MOSI
-  // CSAG to esp32 D25
-  // CSM to esp32 D26
-  // SDOAG & SDOM tied together to VSPI MISO
   Serial.print("Initializing LSM9DS1... ");
   if (!lsm.begin())
   {
     Serial.println("Oops ... unable to initialize the LSM9DS1.");
-    while (1);
+    while (!lsm.begin());
   }
   Serial.println("Found LSM9DS1 9DOF");
 
@@ -128,7 +197,7 @@ void setupSD()
   if (logFile) {
     Serial.printf("Logging to %s", logFilePath);
     Serial.println();
-    if(!logFile.println("time, ax, ay, az, mx, my, mz, gx, gy, gz, lat, lon, fix, sats"))
+    if(!logFile.println("UTC, tfs, mode, ax, ay, az, mx, my, mz, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, gpd, bpd"))
     {
       Serial.println("Logging Failed.");
     }
@@ -150,14 +219,31 @@ void setupGPS() {
   Serial.println("Found GPS");
 }
 
+void setupSwitch() {
+  Serial.print("Initializing 2WD/4WD Switch... ");
+  
+  pinMode(34, INPUT);
+  pinMode(35, INPUT);  
+  
+  if (digitalRead(34) == HIGH && digitalRead(35) == HIGH) {
+    driveState == true;
+    Serial.println("vehicle is in 4WD mode");
+  } else if (digitalRead(34) == HIGH && digitalRead(35) == LOW) {
+    driveState == false;
+    Serial.println("vehicle is in 2WD mode");
+  } else {
+    Serial.println("drive state could not be determined");
+  }
+}
+
 void logSD() {
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
-    if(!logFile.printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %d, %d\n",
-                       t, a.acceleration.x, a.acceleration.y, a.acceleration.z,
+    if(!logFile.printf("%s, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %d, %d, %f, %f, %f, %f\n", timedat, 
+                       t, lastState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
                        m.magnetic.x, m.magnetic.y, m.magnetic.z,
                        g.gyro.x, g.gyro.y, g.gyro.z,
-                       latitude.c_str(), longitude.c_str(), hasFix, sats))
+                       latitude.c_str(), longitude.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, gasPedalDepression, brakePedalDepression))
     {
       Serial.println("Logging Failed.");
     }
@@ -176,10 +262,17 @@ void readLSM() {
   lsm.getEvent(&a, &m, &g, &temp);
 }
 
-void logSerial() {
+void logSerial() { // Write all values to the console with tabs in between them
+
+  // Time data
+  Serial.print(timedat);
+  Serial.print("\t");
   t = millis()/1000.0;
-  // Write all values to the console with tabs in between them
   Serial.print(t); // Assuming t is program time in seconds. This can be plotted on the x-axis!
+
+  // Drive state
+  Serial.print("\t");
+  Serial.print(lastState);
 
   // Accel data
   Serial.print("\t");
@@ -221,6 +314,7 @@ void logSerial() {
 void readGPS() {
   while(GPS_Serial.available()) {
     String gpsData = GPS_Serial.readStringUntil('\n');
+    Serial.print(gpsData);
     parseGPGGA(gpsData);
   }
 }
@@ -243,6 +337,22 @@ void setNextAvailableFilePath() {
     }
 }
 
+String readSwitch() {
+  if ((digitalRead(34) == HIGH) && (digitalRead(35) == HIGH)){
+    driveState = true;
+  } else if ((digitalRead(34) == HIGH) && (digitalRead(35) == LOW)) {
+    driveState = false;
+  }
+
+  if (driveState) {
+    return "4WD";
+  } else if (!driveState) {
+    return "2WD";
+  } else {
+    return "err";
+  }
+}
+
 void parseGPGGA(String data) {
   if (data.startsWith("$GPGGA")) {
     // Split the data using commas
@@ -261,6 +371,13 @@ void parseGPGGA(String data) {
     }
     if (start < data.length() && fieldCount < maxFields) {
       fields[fieldCount++] = data.substring(start);
+    }
+
+    // Extract time information if available
+    if (fieldCount > 0 && fields[1].length() > 0) {
+      timedat = fields[1];
+    } else {
+      timedat = "err";
     }
 
     // Extract latitude and longitude if available
@@ -284,3 +401,71 @@ void parseGPGGA(String data) {
     }
   }
 }
+
+void updateCanbus() {
+  while (CAN.parsePacket()) {
+    int packetSize = CAN.parsePacket();
+    int packetId = CAN.packetId();  // Get the packet ID
+
+    Serial.print("Received packet with id 0x");
+    Serial.print(packetId, HEX);
+    Serial.print(" and length ");
+    Serial.println(packetSize);
+
+    switch (packetId) {
+        // CVT DATA
+      case 0x1F:
+        cvtPrimaryRPM = CAN.parseInt();
+        Serial.print("Received primary RPM as: ");
+        Serial.println(cvtPrimaryRPM);
+        break;
+      case 0x20:
+        cvtSecondaryRPM = CAN.parseInt();
+        Serial.print("Received secondary RPM as: ");
+        Serial.println(cvtSecondaryRPM);
+        break;
+      case 0x21:
+        cvtTemp = CAN.parseInt();
+        Serial.print("Received cvtTemp as: ");
+        Serial.println(cvtTemp);
+        break;
+        // PEDAL DATA
+      case 0x29:
+        gasPedalDepression = CAN.parseInt();
+        Serial.print("Received gasPedalDepression as: ");
+        Serial.println(gasPedalDepression);
+        break;
+      case 0x2A:
+        brakePedalDepression = CAN.parseInt();
+        Serial.print("Received brakePedalDepression as: ");
+        Serial.println(brakePedalDepression);
+        break;
+      case 0x2B:
+        steeringWheelPosition = CAN.parseInt();
+        Serial.print("Received steeringWheelPosition as: ");
+        Serial.println(steeringWheelPosition);
+        break;
+        // FUEL SENSOR DATA
+      case 0x33:
+        fuelLevel = CAN.parseInt();
+        Serial.print("Received fuelLevel as: ");
+        Serial.println(fuelLevel);
+        break;
+        // BATTERY DATA
+      case 0x3D:
+        bmsLowPowerWarning = CAN.parseInt();
+        Serial.print("Received bmsLowPowerWarning as: ");
+        Serial.println(bmsLowPowerWarning);
+        break;
+      default:
+        Serial.println("Unknown packet ID");
+        while (CAN.available()) {
+          CAN.read();  // Discard the data
+        }
+        break;
+    }
+  }
+}
+
+
+
