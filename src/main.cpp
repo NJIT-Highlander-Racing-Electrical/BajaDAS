@@ -7,7 +7,6 @@
 #define TX_GPIO_NUM 22  // Connects to CTX
 #define RX_GPIO_NUM 4  // Connects to CRX
 
-#include <CAN.h>
 #include <Arduino.h>
 #include <Wire.h>
 #include "FS.h"
@@ -15,6 +14,7 @@
 #include <SPI.h>
 #include <Adafruit_LSM9DS1.h>
 #include <HardwareSerial.h>
+#include <CAN.h>
 
 // data variables
 int cvtPrimaryRPM = 0;
@@ -82,6 +82,7 @@ void readGPS();
 void parseGPGGA(String data);
 
 void updateCanbus();
+void updateCanbusData();
 
 void logSerial();
 void logSD();
@@ -115,12 +116,12 @@ void setup() {
 }
 
 void loop() {
-  delay(13); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
-             // amount of functions per loop has changed since this number was picked, so changing it should be possible
+  delay(6); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
+             // amount of functions per loop has changed since this number (13) was picked, so changing it should be possible
 
   // update all global data variables from CAN-Bus
-  updateCanbus();
-
+  //updateCanbus();
+  updateCanbusData();
 
   // read data from modules
   readLSM();
@@ -239,7 +240,7 @@ void setupSwitch() {
 void logSD() {
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
-    if(!logFile.printf("%s, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %d, %d, %f, %f, %f, %f\n", timedat, 
+    if(!logFile.printf("%s, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i\n", timedat, 
                        t, lastState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
                        m.magnetic.x, m.magnetic.y, m.magnetic.z,
                        g.gyro.x, g.gyro.y, g.gyro.z,
@@ -307,6 +308,18 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print(hasFix);            // GPS Fix
   Serial.print("\t");
   Serial.print(sats);          // GPS Satalites
+
+  // CVT Data
+  Serial.print("\t");
+  Serial.print(cvtPrimaryRPM);
+  Serial.print("\t");
+  Serial.print(cvtSecondaryRPM);
+
+  // Pedal Data
+  Serial.print("\t");
+  Serial.print(gasPedalDepression);
+  Serial.print("\t");
+  Serial.print(brakePedalDepression);
 
   Serial.println(); // Finish with a newline
 }
@@ -467,5 +480,50 @@ void updateCanbus() {
   }
 }
 
+void updateCanbusData() {
+  while (CAN.parsePacket()) {
+    int packetSize = CAN.parsePacket();
+    int packetId = CAN.packetId();  // Get the packet ID
 
+    // Serial.print("Received packet with id 0x");
+    // Serial.print(packetId, HEX);
+    // Serial.print(" and length ");
+    // Serial.println(packetSize);
 
+    switch (packetId) {
+        // CVT DATA
+      case 0x1F:
+        cvtPrimaryRPM = CAN.parseInt();
+        break;
+      case 0x20:
+        cvtSecondaryRPM = CAN.parseInt();
+        break;
+      case 0x21:
+        cvtTemp = CAN.parseInt();
+        break;
+        // PEDAL DATA
+      case 0x29:
+        gasPedalDepression = CAN.parseInt();
+        break;
+      case 0x2A:
+        brakePedalDepression = CAN.parseInt();
+        break;
+      case 0x2B:
+        steeringWheelPosition = CAN.parseInt();
+        break;
+        // FUEL SENSOR DATA
+      case 0x33:
+        fuelLevel = CAN.parseInt();
+        break;
+        // BATTERY DATA
+      case 0x3D:
+        bmsLowPowerWarning = CAN.parseInt();
+        break;
+      default:
+        while (CAN.available()) {
+          CAN.read();  // Discard the data
+        }
+        break;
+    }
+  }
+}
