@@ -35,7 +35,8 @@ float gpsTime = 0.0;
 float gpsDate = 0.0;
 
 bool dasEnabled = true;
-bool engagementState = false;
+const int dasSwitch = 13;
+bool dasError = false;
 
 // time from program start in seconds
 float t;
@@ -51,6 +52,7 @@ const uint8_t SDCARD_CS = 5;
 
 // drive state switch variables
 bool driveState; // true when in 4WD and false in 2WD
+bool driveStateUnknown = true; //If 2WD/4WD switch has not been pressed yet, the state is unknown (Schrödinger's 2WD/4WD Switch)
 
 // gps initialization variables
 String latitude, longitude;
@@ -64,6 +66,7 @@ sensors_event_t a, m, g, temp;
 
 // last observed drive state 
 String lastState;
+String lastDasState;
 
 // log file setup
 File logFile;
@@ -74,15 +77,18 @@ void setupSD();
 void setupLSM();
 void setupGPS();
 void setupSwitch();
+void setupDasSwitch();
 
 void readLSM();
 String readSwitch();
+String readDasSwitch();
 void readGPS();
 
 void parseGPGGA(String data);
 
 void updateCanbus();
 void updateCanbusData();
+void sendCanbus();
 
 void logSerial();
 void logSD();
@@ -122,6 +128,7 @@ void loop() {
   // update all global data variables from CAN-Bus
   //updateCanbus();
   updateCanbusData();
+  sendCanbus();
 
   // read data from modules
   readLSM();
@@ -129,6 +136,7 @@ void loop() {
 
   // observe drive state
   lastState = readSwitch();
+  lastDasState = readDasSwitch();
 
   // log data to microsd card and serial connection
   logSD();
@@ -170,6 +178,7 @@ void setupSD()
   Serial.print("Initializing SD card... ");
   if (!SD.begin(SDCARD_CS)) {
     Serial.println("Oops... unable to initialize the SD card.");
+    dasError = true;
     while (1);
   }
 
@@ -177,6 +186,7 @@ void setupSD()
 
   if(cardType == CARD_NONE){
     Serial.println("No SD card attached");
+    dasError = true;
     return;
   }
 
@@ -196,6 +206,7 @@ void setupSD()
   setNextAvailableFilePath();
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
+    dasError = false;
     Serial.printf("Logging to %s", logFilePath);
     Serial.println();
     if(!logFile.println("UTC, tfs, mode, ax, ay, az, mx, my, mz, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, gpd, bpd"))
@@ -208,6 +219,7 @@ void setupSD()
   else {
     Serial.printf("Failed to open %s", logFilePath);
     Serial.println();
+    dasError = true;
   }
 }
 
@@ -226,22 +238,41 @@ void setupSwitch() {
   pinMode(34, INPUT);
   pinMode(35, INPUT);  
   
-  if (digitalRead(34) == HIGH && digitalRead(35) == HIGH) {
+  if (digitalRead(34) == HIGH && digitalRead(35) == LOW) {
     driveState == true;
-    Serial.println("vehicle is in 4WD mode");
-  } else if (digitalRead(34) == HIGH && digitalRead(35) == LOW) {
+    driveStateUnknown = false;
+    Serial.println("4WD MODE");
+  }
+  if (digitalRead(34) == LOW && digitalRead(35) == HIGH) {
     driveState == false;
-    Serial.println("vehicle is in 2WD mode");
-  } else {
-    Serial.println("drive state could not be determined");
+    driveStateUnknown = false;
+    Serial.println("2WD MODE");
+  }
+  if (digitalRead(34) == HIGH && digitalRead(35) == HIGH) {
+    Serial.println("drive state error");
+    driveStateUnknown = true;
+
+  }
+
+}
+
+void setupDasSwitch() {
+  pinMode(13, INPUT_PULLUP);
+  if (digitalRead(13) == HIGH) {
+    dasEnabled = false;
+    Serial.println("DAS RECORDING DISABLED");
+  }
+  else {
+    dasEnabled = true;
+    Serial.println("DAS RECORDING ENABLED");
   }
 }
 
 void logSD() {
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
-    if(!logFile.printf("%s, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i\n", timedat, 
-                       t, lastState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
+    if(!logFile.printf("%s, %f, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i\n", timedat, 
+                       t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
                        m.magnetic.x, m.magnetic.y, m.magnetic.z,
                        g.gyro.x, g.gyro.y, g.gyro.z,
                        latitude.c_str(), longitude.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, gasPedalDepression, brakePedalDepression))
@@ -351,19 +382,43 @@ void setNextAvailableFilePath() {
 }
 
 String readSwitch() {
-  if ((digitalRead(34) == HIGH) && (digitalRead(35) == HIGH)){
+ 
+  if (digitalRead(34) == HIGH && digitalRead(35) == LOW) {
     driveState = true;
-  } else if ((digitalRead(34) == HIGH) && (digitalRead(35) == LOW)) {
+    driveStateUnknown = false;
+
+  }
+  if (digitalRead(34) == LOW && digitalRead(35) == HIGH) {
     driveState = false;
+    driveStateUnknown = false;
   }
 
-  if (driveState) {
+  if (driveStateUnknown) {
+    return "ERR";
+  }
+  else if (driveState) {
     return "4WD";
   } else if (!driveState) {
     return "2WD";
-  } else {
-    return "err";
   }
+}
+
+String readDasSwitch() {
+
+ if (digitalRead(13) == HIGH) {
+    dasEnabled = false;
+  }
+  else {
+    dasEnabled = true;
+  }
+
+   if (dasEnabled) {
+    return "DAS ON";
+  }
+  else {
+    return "DAS OFF";
+  }
+
 }
 
 void parseGPGGA(String data) {
@@ -526,4 +581,32 @@ void updateCanbusData() {
         break;
     }
   }
+}
+
+
+void sendCanbus() {
+
+  CAN.beginPacket(0x51);  //sets the ID
+  CAN.print(dasEnabled);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+
+  delay(5); // For stability, probably can be reduced
+
+  if (dasError) {
+    CAN.beginPacket(0x53);  //sets the ID
+    CAN.print(dasError);  //prints data to CAN Bus just like Serial.print
+    CAN.endPacket();
+    delay(5);
+  }
+
+  CAN.beginPacket(0x52);  //sets the ID
+  CAN.print(driveState);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+  delay(5);
+
+  CAN.beginPacket(0x54);  //sets the ID
+  CAN.print(driveStateUnknown);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+  delay(5);
+
 }
