@@ -31,8 +31,23 @@ bool bmsLowPowerWarning = false;
 
 float gpsLatitude = 0.0;
 float gpsLongitude = 0.0;
-float gpsTime = 0.0;
-float gpsDate = 0.0;
+
+String hourString = "";
+String minuteString = "";
+String secondString = "";
+
+int timeHour = 0;
+int timeMinute = 0;
+int timeSecond = 0;
+
+
+String dateString = "";
+String dayString = "";
+String YearString = "";
+
+int dateMonth = 0;
+int dateDay = 0;
+int dateYear = 0;
 
 bool dasEnabled = true;
 const int dasSwitch = 13;
@@ -118,6 +133,7 @@ void setup() {
   setupSD();
   setupLSM();
   setupSwitch();
+  setupDasSwitch();
   setupGPS();
 }
 
@@ -209,7 +225,7 @@ void setupSD()
     dasError = false;
     Serial.printf("Logging to %s", logFilePath);
     Serial.println();
-    if(!logFile.println("UTC, tfs, mode, ax, ay, az, mx, my, mz, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, gpd, bpd"))
+    if(!logFile.println("Hour, Minute, Second, tfs, mode, daqmode, ax, ay, az, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, temp, gpd, bpd"))
     {
       Serial.println("Logging Failed.");
     }
@@ -239,12 +255,12 @@ void setupSwitch() {
   pinMode(35, INPUT);  
   
   if (digitalRead(34) == HIGH && digitalRead(35) == LOW) {
-    driveState == true;
+    driveState = true;
     driveStateUnknown = false;
     Serial.println("4WD MODE");
   }
   if (digitalRead(34) == LOW && digitalRead(35) == HIGH) {
-    driveState == false;
+    driveState = false;
     driveStateUnknown = false;
     Serial.println("2WD MODE");
   }
@@ -257,6 +273,7 @@ void setupSwitch() {
 }
 
 void setupDasSwitch() {
+  Serial.println("Reading DAS switch");
   pinMode(13, INPUT_PULLUP);
   if (digitalRead(13) == HIGH) {
     dasEnabled = false;
@@ -271,11 +288,10 @@ void setupDasSwitch() {
 void logSD() {
   logFile = SD.open(logFilePath, FILE_APPEND);
   if (logFile) {
-    if(!logFile.printf("%s, %f, %f, %s, %f, %f, %f, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i\n", timedat, 
+    if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %f, %i, %i\n", hourString, minuteString, secondString, 
                        t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
-                       m.magnetic.x, m.magnetic.y, m.magnetic.z,
                        g.gyro.x, g.gyro.y, g.gyro.z,
-                       latitude.c_str(), longitude.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, gasPedalDepression, brakePedalDepression))
+                       latitude.c_str(), longitude.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression))
     {
       Serial.println("Logging Failed.");
     }
@@ -284,6 +300,7 @@ void logSD() {
     Serial.printf("Failed to open %s", logFilePath);
     Serial.println();
   }
+
 }
 
 void readLSM() {
@@ -297,7 +314,11 @@ void readLSM() {
 void logSerial() { // Write all values to the console with tabs in between them
 
   // Time data
-  Serial.print(timedat);
+  Serial.print(hourString);
+  Serial.print(":");
+  Serial.print(minuteString);
+  Serial.print(":");
+  Serial.print(secondString);
   Serial.print("\t");
   t = millis()/1000.0;
   Serial.print(t); // Assuming t is program time in seconds. This can be plotted on the x-axis!
@@ -306,6 +327,9 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print("\t");
   Serial.print(lastState);
 
+  Serial.print("\t");
+  Serial.print(lastDasState);
+
   // Accel data
   Serial.print("\t");
   Serial.print(a.acceleration.x);  // Accel X
@@ -313,14 +337,6 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print(a.acceleration.y);  // Accel Y
   Serial.print("\t");
   Serial.print(a.acceleration.z);  // Accel Z
-
-  // Magnetic data
-  Serial.print("\t");
-  Serial.print(m.magnetic.x);      // Mag X
-  Serial.print("\t");
-  Serial.print(m.magnetic.y);      // Mag Y
-  Serial.print("\t");
-  Serial.print(m.magnetic.z);      // Mag Z
 
   // Gyro data
   Serial.print("\t");
@@ -345,6 +361,8 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print(cvtPrimaryRPM);
   Serial.print("\t");
   Serial.print(cvtSecondaryRPM);
+  Serial.print("\t");
+  Serial.print(cvtTemp);
 
   // Pedal Data
   Serial.print("\t");
@@ -358,7 +376,7 @@ void logSerial() { // Write all values to the console with tabs in between them
 void readGPS() {
   while(GPS_Serial.available()) {
     String gpsData = GPS_Serial.readStringUntil('\n');
-    Serial.print(gpsData);
+    //Serial.print(gpsData);
     parseGPGGA(gpsData);
   }
 }
@@ -398,7 +416,8 @@ String readSwitch() {
   }
   else if (driveState) {
     return "4WD";
-  } else if (!driveState) {
+  } 
+  else {
     return "2WD";
   }
 }
@@ -412,11 +431,11 @@ String readDasSwitch() {
     dasEnabled = true;
   }
 
-   if (dasEnabled) {
-    return "DAS ON";
+  if (dasEnabled) {
+    return "LOG ON";
   }
   else {
-    return "DAS OFF";
+    return "LOG OFF";
   }
 
 }
@@ -447,6 +466,33 @@ void parseGPGGA(String data) {
     } else {
       timedat = "err";
     }
+
+    hourString = timedat.substring(0,2); 
+
+    int hours = hourString.toInt(); // Convert the string to an integer
+    hours -= 4;
+    // Handle cases where the offset causes the hour to go negative
+    if (hours < 0) {
+        hours += 24; // Wrap around to previous day
+    }
+
+    if (hours == 0) {
+      timeHour = 12; // Midnight
+    } else if (hours > 12) {
+      timeHour = hours - 12; // Afternoon/evening
+    } else {
+      timeHour = hours; // Morning
+    }
+
+    hourString = String(timeHour);
+     if (timeHour < 10) {
+      hourString = "0" + hourString;
+    }
+
+    minuteString = timedat.substring(2,4);
+    timeMinute = minuteString.toInt();
+    secondString = timedat.substring(4,6);
+    timeSecond = secondString.toInt();
 
     // Extract latitude and longitude if available
     if (fieldCount > 4 && fields[2].length() > 0 && fields[4].length() > 0) {
@@ -606,6 +652,21 @@ void sendCanbus() {
 
   CAN.beginPacket(0x54);  //sets the ID
   CAN.print(driveStateUnknown);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+  delay(5);
+
+  CAN.beginPacket(0x49);  //sets the ID
+  CAN.print(timeHour);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+  delay(5);
+
+  CAN.beginPacket(0x4A);  //sets the ID
+  CAN.print(timeMinute);  //prints data to CAN Bus just like Serial.print
+  CAN.endPacket();
+  delay(5);
+
+  CAN.beginPacket(0x4B);  //sets the ID
+  CAN.print(timeSecond);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
   delay(5);
 
