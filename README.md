@@ -35,6 +35,7 @@ To use BajaDAS, ensure the following libraries are installed:
 ## GPS Information
 
 * GPS System that tracks vehicle location (latitude and longitude) as well as reporting other information like time and date
+* As of 5/13/24, the DAS software does not convert the GT-U7's GPS coordinates from NMEA (?) to standard usable coordinates
 
 ### GPS Design Goals
 
