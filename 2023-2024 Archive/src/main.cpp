@@ -71,6 +71,7 @@ bool driveStateUnknown = true; //If 2WD/4WD switch has not been pressed yet, the
 
 // gps initialization variables
 String latitude, longitude;
+String latitudeDecimal, longitudeDecimal;
 HardwareSerial GPS_Serial(2);
 bool hasFix = false;
 int sats = 0;
@@ -100,6 +101,7 @@ String readDasSwitch();
 void readGPS();
 
 void parseGPGGA(String data);
+String convertToDecimalDegrees(const String& coordinate, bool isLatitude);
 
 void updateCanbus();
 void updateCanbusData();
@@ -195,7 +197,7 @@ void setupSD()
   if (!SD.begin(SDCARD_CS)) {
     Serial.println("Oops... unable to initialize the SD card.");
     dasError = true;
-    while (1);
+    while (!SD.begin(SDCARD_CS));
   }
 
   uint8_t cardType = SD.cardType();
@@ -286,19 +288,21 @@ void setupDasSwitch() {
 }
 
 void logSD() {
-  logFile = SD.open(logFilePath, FILE_APPEND);
-  if (logFile) {
-    if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %f, %i, %i\n", hourString, minuteString, secondString, 
-                       t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
-                       g.gyro.x, g.gyro.y, g.gyro.z,
-                       latitude.c_str(), longitude.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression))
-    {
-      Serial.println("Logging Failed.");
+  if (dasEnabled) {
+    logFile = SD.open(logFilePath, FILE_APPEND);
+    if (logFile) {
+      if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
+                        t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
+                        g.gyro.x, g.gyro.y, g.gyro.z,
+                        latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression))
+      {
+        Serial.println("Logging Failed.");
+      }
     }
-  }
-  else {
-    Serial.printf("Failed to open %s", logFilePath);
-    Serial.println();
+    else {
+      Serial.printf("Failed to open %s", logFilePath);
+      Serial.println();
+    }
   }
 
 }
@@ -348,9 +352,9 @@ void logSerial() { // Write all values to the console with tabs in between them
 
   // GPS data
   Serial.print("\t");
-  Serial.print(latitude);          // GPS Latitude
+  Serial.print(latitudeDecimal);          // GPS Latitude
   Serial.print("\t");
-  Serial.print(longitude);         // GPS Longitude
+  Serial.print(longitudeDecimal);         // GPS Longitude
   Serial.print("\t");
   Serial.print(hasFix);            // GPS Fix
   Serial.print("\t");
@@ -440,6 +444,21 @@ String readDasSwitch() {
 
 }
 
+//Function to convert string NMEA data from GPS into usable decimal degrees format
+String convertToDecimalDegrees(const String& coordinate, bool isLatitude) {
+    int degreesLength = isLatitude ? 2 : 3; // Determine the number of degrees (DD or DDD)
+
+    // Extract degrees and minutes from the string
+    double degrees = coordinate.substring(0, degreesLength).toDouble();
+    double minutes = coordinate.substring(degreesLength).toDouble();
+
+    // Convert to decimal degrees
+    double decimalDegrees = degrees + (minutes / 60.0);
+
+    // Convert decimal degrees to string
+    return String(decimalDegrees, 6); // 6 decimal places
+}
+
 void parseGPGGA(String data) {
   if (data.startsWith("$GPGGA")) {
     // Split the data using commas
@@ -501,6 +520,13 @@ void parseGPGGA(String data) {
     } else {
       latitude = "";
       longitude = "";
+    }
+
+    // Convert latitude and longitude NMEA strings into decimal degrees strings (for Google Maps, GPS Visualizer, etc)
+ if (latitude.length() > 0 && longitude.length() > 0) {
+        // Convert NMEA coordinates to decimal degrees strings
+        latitudeDecimal = convertToDecimalDegrees(latitude, 1);
+        longitudeDecimal = "-" + convertToDecimalDegrees(longitude, 0);
     }
 
     // Extract fix status and satellite count
