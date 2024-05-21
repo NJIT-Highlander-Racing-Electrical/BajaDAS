@@ -2,6 +2,10 @@
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
+## Important Note
+
+As of 5/20/24, there is an unresolved bug in the main code that halts the program. The program appears to get stuck after GPS setup is ran. Further testing is needed on this
+
 ## Features
 
 - **9-DOF Sensor**: Gathers acceleration, magnetic field, gyroscope, and temperature data via the `Adafruit_LSM9DS1` sensor.
