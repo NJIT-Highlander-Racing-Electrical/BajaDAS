@@ -4,7 +4,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## Important Note
 
-As of 5/20/24, there is an unresolved bug in the main code that halts the program. The program appears to get stuck after GPS setup is ran. Further testing is needed on this
+* As of 5/20/24, there is an unresolved bug in the main code that halts the program. The program appears to get stuck after GPS setup is ran. Further testing is needed on this
+* Additionally, it would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground
 
 ## Features
 
