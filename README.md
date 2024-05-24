@@ -40,16 +40,12 @@ To use BajaDAS, ensure the following libraries are installed:
 ## GPS Information
 
 * GPS System that tracks vehicle location (latitude and longitude) as well as reporting other information like time and date
-* As of 5/13/24, the DAS software does not convert the GT-U7's GPS coordinates from NMEA (?) to standard usable coordinates
 
 ### GPS Design Goals
 
-* CAN-Bus integration to report latitude, longitude, time, and date
-* Should we use GoouuuTech GT-U7 module that we have with active antenna, or buy a new one like an M10Q and use without active antenna? Pros/Cons?
-* Voltage regulator
-* Custom PCB
-* ESP32
-
+* CAN-Bus integration with GT-U7 GPS module reports latitude, longitude, time, and date
+* Active antenna mounted to firewall increases reception 
+  
 ## Fuel Sensor
 
 * The fuel sensor is integrated into the DAS for the following reasons:
