@@ -6,6 +6,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * As of 5/20/24, there is an unresolved bug in the main code that halts the program. The program appears to get stuck after GPS setup is ran. Further testing is needed on this.
 * Additionally, it would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground.
+* In the 2024-2025 DAQ, it would be beneficial to include a voltage divider or some other method of determining battery voltage for a low battery warning
 
 ## Features
 
