@@ -18,7 +18,6 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 - **Serial Logging**: Outputs sensor readings to the serial console for live monitoring.
 - **CAN Bus Support**: Receives all incoming vehicle data using a TJA1051T CAN Transceiver.
 - **Connection Modularity**: Screw Terminals on DAQ PCB so that additional modules can be connected to the microcontroller in the future
-- **2WD/4WD State**: Receives input signals from 2WD/4WD switch about what mode the vehicle is in, and forwards this data to the dashboard via CAN-Bus
 - **Fuel Sensor**: Integrates the fuel sensor and data storage as a part of the DAS
 
 ## Dependencies
