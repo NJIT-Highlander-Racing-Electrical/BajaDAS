@@ -4,8 +4,8 @@
 // Shahnawaz Haque & Alexander Huegler
 
 
-#define TX_GPIO_NUM 22  // Connects to CTX
-#define RX_GPIO_NUM 4  // Connects to CRX
+#define TX_GPIO_NUM 27  // Connects to CTX
+#define RX_GPIO_NUM 14  // Connects to CRX
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -137,18 +137,26 @@ void setup() {
   setupSwitch();
   setupDasSwitch();
   setupGPS();
+  Serial.println ("Finishing Setup");
 }
 
 void loop() {
   delay(6); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
              // amount of functions per loop has changed since this number (13) was picked, so changing it should be possible
 
+//  Serial.println("Loop Iteration");
+
   // update all global data variables from CAN-Bus
-  //updateCanbus();
+  //  Serial.println("Update Canbus Data");
+
   updateCanbusData();
+  //  Serial.println("Send Canbus");
+
   sendCanbus();
 
   // read data from modules
+ //   Serial.println("Read LSM");
+
   readLSM();
   readGPS();
 
@@ -658,12 +666,19 @@ void updateCanbusData() {
 
 void sendCanbus() {
 
+
+   // Serial.println("Sending dasEnabled");
+
   CAN.beginPacket(0x51);  //sets the ID
   CAN.print(dasEnabled);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
 
+  //  Serial.println("Sent dasEnabled");
+
+
   delay(5); // For stability, probably can be reduced
 
+ //   Serial.println("2");
   if (dasError) {
     CAN.beginPacket(0x53);  //sets the ID
     CAN.print(dasError);  //prints data to CAN Bus just like Serial.print
@@ -671,6 +686,7 @@ void sendCanbus() {
     delay(5);
   }
 
+  //  Serial.println("3");
   CAN.beginPacket(0x52);  //sets the ID
   CAN.print(driveState);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
@@ -681,6 +697,7 @@ void sendCanbus() {
   CAN.endPacket();
   delay(5);
 
+ //   Serial.println("5");
   CAN.beginPacket(0x49);  //sets the ID
   CAN.print(timeHour);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
@@ -695,5 +712,6 @@ void sendCanbus() {
   CAN.print(timeSecond);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
   delay(5);
-
+  
+   // Serial.println("end");
 }
