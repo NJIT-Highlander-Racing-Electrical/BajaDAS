@@ -25,6 +25,8 @@ int gasPedalDepression = 0;
 int brakePedalDepression = 0;
 int steeringWheelPosition = 0;
 
+int wheelSpeed1 = 0;
+
 int fuelLevel = 0;
 
 bool bmsLowPowerWarning = false;
@@ -235,7 +237,7 @@ void setupSD()
     dasError = false;
     Serial.printf("Logging to %s", logFilePath);
     Serial.println();
-    if(!logFile.println("Hour, Minute, Second, tfs, mode, daqmode, ax, ay, az, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, temp, gpd, bpd"))
+    if(!logFile.println("Hour, Minute, Second, tfs, mode, daqmode, ax, ay, az, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, temp, gpd, bpd, wheelspeed1"))
     {
       Serial.println("Logging Failed.");
     }
@@ -302,7 +304,7 @@ void logSD() {
       if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
                         t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
                         g.gyro.x, g.gyro.y, g.gyro.z,
-                        latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression))
+                        latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression, wheelSpeed1))
       {
         Serial.println("Logging Failed.");
       }
@@ -381,6 +383,10 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print(gasPedalDepression);
   Serial.print("\t");
   Serial.print(brakePedalDepression);
+
+  //Wheel Speed Data
+  Serial.print("\t");
+  Serial.print(wheelSpeed1);
 
   Serial.println(); // Finish with a newline
 }
@@ -653,6 +659,10 @@ void updateCanbusData() {
         // BATTERY DATA
       case 0x3D:
         bmsLowPowerWarning = CAN.parseInt();
+        break;
+        // Wheel speed test sensor
+      case 0x96:
+        wheelSpeed1 = CAN.parseInt();
         break;
       default:
         while (CAN.available()) {
