@@ -4,9 +4,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## Important Notes + 2025 Research Topics
 
-* As of 5/20/24, there is an unresolved bug in the main code that halts the program. The program appears to get stuck after GPS setup is ran. Further testing is needed on this.
-     * After further investigation, the program halts after the first CAN message send is attempted. All wiring seems to check OK, so the next step is to replace the transceiver.
-* Additionally, it would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
+* It would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
 * In the 2024-2025 DAQ, it would be beneficial to include a voltage divider or some other method of determining battery voltage for a low battery warning
 * In the 2024-2025 DAQ, a GPS upgrade should be made to something like the Adafruit Ultimate GPS Breakout - PA1616S (https://www.adafruit.com/product/746) that can poll up to 10Hz
 
