@@ -18,19 +18,6 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 - **Connection Modularity**: Screw Terminals on DAQ PCB so that additional modules can be connected to the microcontroller in the future
 - **Fuel Sensor**: Integrates the fuel sensor and data storage as a part of the DAS
 
-## Dependencies
-
-To use BajaDAS, ensure the following libraries are installed:
-
-- `Arduino.h`
-- `Wire.h`
-- `FS.h`
-- `SD.h`
-- `SPI.h`
-- `Adafruit_LSM9DS1.h`
-- `HardwareSerial.h`
-- `mcp_can.h`
-
 ## Hardware Setup
 
 - **Microcontroller**: Designed for Arduino-compatible boards with multiple hardware serial interfaces and SPI capabilities.
@@ -43,7 +30,7 @@ To use BajaDAS, ensure the following libraries are installed:
 
 ### GPS Design Goals
 
-* CAN-Bus integration with GT-U7 GPS module reports latitude, longitude, time, and date
+* CAN-Bus integration with Adafruit Ultimate GPS module reports latitude, longitude, time, and date
 * Active antenna mounted to firewall increases reception 
   
 ## Fuel Sensor
