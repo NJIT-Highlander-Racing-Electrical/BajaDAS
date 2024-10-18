@@ -143,21 +143,17 @@ void setup() {
 }
 
 void loop() {
-  delay(6); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
+  delay(0); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
              // amount of functions per loop has changed since this number (13) was picked, so changing it should be possible
 
-//  Serial.println("Loop Iteration");
 
   // update all global data variables from CAN-Bus
-  //  Serial.println("Update Canbus Data");
 
   updateCanbusData();
-  //  Serial.println("Send Canbus");
 
   sendCanbus();
 
   // read data from modules
- //   Serial.println("Read LSM");
 
   readLSM();
   readGPS();
