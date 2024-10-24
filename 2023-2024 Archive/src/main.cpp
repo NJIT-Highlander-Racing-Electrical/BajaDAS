@@ -297,7 +297,7 @@ void logSD() {
   if (dasEnabled) {
     logFile = SD.open(logFilePath, FILE_APPEND);
     if (logFile) {
-      if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
+      if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
                         t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
                         g.gyro.x, g.gyro.y, g.gyro.z,
                         latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression, wheelSpeed1))
