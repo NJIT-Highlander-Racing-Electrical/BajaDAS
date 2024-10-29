@@ -10,6 +10,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Occassionaly, numbers will get shifted or have other erroneous digits added to them in the SD logging. Maybe a buffer should be added that saves every value to that so that no values are misprinted to the log.
 
+* It may also be valuable to add flags that mark whether or not the data is new. Currently, it just continues to print the last value it received over CAN-bus, but this data is not necessarily valid.
+
 ## Features
 
 - **9-DOF Sensor**: Gathers acceleration, magnetic field, gyroscope, and temperature data via the `Adafruit_LSM9DS1` sensor.
