@@ -8,6 +8,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 * In the 2024-2025 DAQ, it would be beneficial to include a voltage divider or some other method of determining battery voltage for a low battery warning
 * In the 2024-2025 DAQ, a GPS upgrade should be made to something like the Adafruit Ultimate GPS Breakout - PA1616S (https://www.adafruit.com/product/746) that can poll up to 10Hz
 
+* It would be beneficial to include a switch for data logging on/off and two buttons for miscellaneous functions that we may need in the future
+
 * Occassionaly, numbers will get shifted or have other erroneous digits added to them in the SD logging. Maybe a buffer should be added that saves every value to that so that no values are misprinted to the log.
 
 ## Features
