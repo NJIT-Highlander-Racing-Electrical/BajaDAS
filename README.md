@@ -14,6 +14,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Make sure that the DAS this year saves more of the GPS data. Heading, velocity, elevation, etc
 
+* Also make it very easy to switch timezone offsets for GPS time (we'll be in Arizona) 
+
 ## Features
 
 - **9-DOF Sensor**: Gathers acceleration, magnetic field, gyroscope, and temperature data via the `Adafruit_LSM9DS1` sensor.
