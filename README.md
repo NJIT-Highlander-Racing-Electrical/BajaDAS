@@ -12,6 +12,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Occassionaly, numbers will get shifted or have other erroneous digits added to them in the SD logging. Maybe a buffer should be added that saves every value to that so that no values are misprinted to the log.
 
+* Make sure that the DAS this year saves more of the GPS data. Heading, velocity, elevation, etc
+
 ## Features
 
 - **9-DOF Sensor**: Gathers acceleration, magnetic field, gyroscope, and temperature data via the `Adafruit_LSM9DS1` sensor.
