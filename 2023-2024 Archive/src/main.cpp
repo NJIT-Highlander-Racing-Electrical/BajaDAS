@@ -105,7 +105,7 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 // function declarations here:
 void setupSD();
 void setupLSM();
-void setupLSMOffsets();
+void setupLSMOffsets(double x, double y, double z);
 void setupGPS();
 void setupSwitch();
 void setupDasSwitch();
