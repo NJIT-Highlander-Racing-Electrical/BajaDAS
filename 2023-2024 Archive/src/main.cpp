@@ -8,6 +8,7 @@
 #define RX_GPIO_NUM 14  // Connects to CRX
 
 #include <Arduino.h>
+#include <math.h>
 #include <Wire.h>
 #include "FS.h"
 #include "SD.h"
@@ -41,7 +42,6 @@ String secondString = "";
 int timeHour = 0;
 int timeMinute = 0;
 int timeSecond = 0;
-
 
 String dateString = "";
 String dayString = "";
@@ -82,6 +82,18 @@ int sats = 0;
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1(XG_CS, M_CS);
 sensors_event_t a, m, g, temp;
 
+// LSM9DS1 accelerations when static and level (without vectors) - measured values
+const double initialAccelerationX = 1.87; // should be zero
+const double initialAccelerationY = 9.16; // should be 9.81
+const double initialAccelerationZ = 3.34; // should be zero
+
+const double gravity = 9.81;
+
+// LSM9DS1 offset angles in radians
+double offsetAngleX;
+double offsetAngleY;
+double offsetAngleZ;
+
 // last observed drive state 
 String lastState;
 String lastDasState;
@@ -93,6 +105,7 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 // function declarations here:
 void setupSD();
 void setupLSM();
+void setupLSMOffsets();
 void setupGPS();
 void setupSwitch();
 void setupDasSwitch();
@@ -136,6 +149,7 @@ void setup() {
   // setup connections to various modules
   setupSD();
   setupLSM();
+  setupLSMOffsets(initialAccelerationX, initialAccelerationY, initialAccelerationZ);
   setupSwitch();
   setupDasSwitch();
   setupGPS();
@@ -195,6 +209,14 @@ void setupLSM()
   lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
   // lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);
   // lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
+}
+
+void setupLSMOffsets(double x, double y, double z) {
+
+  offsetAngleX = asin(gravity / x);
+  offsetAngleY = acos(initialAccelerationY / y);
+  offsetAngleZ = asin(gravity / z);
+
 }
 
 void setupSD()
@@ -298,7 +320,7 @@ void logSD() {
     logFile = SD.open(logFilePath, FILE_APPEND);
     if (logFile) {
       if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
-                        t, lastState, lastDasState, a.acceleration.x, a.acceleration.y, a.acceleration.z,
+                        t, lastState, lastDasState, (a.acceleration.x * sin(offsetAngleX)), (a.acceleration.y * cos(offsetAngleY)), (a.acceleration.z * sin(offsetAngleZ)),
                         g.gyro.x, g.gyro.y, g.gyro.z,
                         latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, cvtPrimaryRPM, cvtSecondaryRPM, cvtTemp, gasPedalDepression, brakePedalDepression, wheelSpeed1))
       {
@@ -342,11 +364,11 @@ void logSerial() { // Write all values to the console with tabs in between them
 
   // Accel data
   Serial.print("\t");
-  Serial.print(a.acceleration.x);  // Accel X
+  Serial.print(a.acceleration.x * cos(offsetAngleX));  // Accel X
   Serial.print("\t");
-  Serial.print(a.acceleration.y);  // Accel Y
+  Serial.print(a.acceleration.y * sin(offsetAngleY));  // Accel Y
   Serial.print("\t");
-  Serial.print(a.acceleration.z);  // Accel Z
+  Serial.print(a.acceleration.z * cos(offsetAngleZ));  // Accel Z
 
   // Gyro data
   Serial.print("\t");
