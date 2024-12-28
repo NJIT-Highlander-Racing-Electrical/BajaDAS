@@ -10,7 +10,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
 
-* I need to update the DAS enclosure for next year to use Adafruit's panel mount SD card port and to decrease wall thickness where the SMA antenna adapter conncetion is
+* I need to update the DAS enclosure for next year to use Adafruit's panel mount SD card port and to decrease wall thickness where the SMA antenna adapter connection is
 
 ## Important Notes + 2025 Research Topics
 
