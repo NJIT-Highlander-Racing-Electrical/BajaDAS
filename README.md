@@ -8,6 +8,10 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I will be soldering two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
 
+* The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
+
+* I need to update the DAS enclosure for next year to use Adafruit's panel mount SD card port and to decrease wall thickness where the SMA antenna adapter conncetion is
+
 ## Important Notes + 2025 Research Topics
 
 * It would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
