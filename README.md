@@ -9,6 +9,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 * Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I will be soldering two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
 
 * The Ultimate GPS Symbol labels the RX pin as TXD and the TX pin as RXD, so now RX goes to RX and TX goes to TX and hardware serial does not work. Planning on moving to software serial unless I decide to buy a new PCB
+    * Nevermind, it looks like RX pin on GPS module goes to GPIO 17 on ESP32 (Hardware Serial 2 TX) and TX on GPS goes to GPIO 16 (Hardware Serial 2 RX), so all should be good. Still planning on updating PCB file to be clearer
 
 * The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
 
