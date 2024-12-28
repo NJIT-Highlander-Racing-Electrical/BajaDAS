@@ -2,6 +2,12 @@
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
+## Andrew's Winter Break Updates
+
+* I had some issues with the SD card where I would get the message that "The physical drive cannot work." After looking through [this](https://github.com/espressif/arduino-esp32/issues/7707), this could be happening for several reasons. One is that it is a 32GB card which occasionally has issues. Another user stated that the default MISO pin (23) does not always work.
+
+* Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I will be soldering two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
+
 ## Important Notes + 2025 Research Topics
 
 * It would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
