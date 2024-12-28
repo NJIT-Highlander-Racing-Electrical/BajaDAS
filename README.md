@@ -31,6 +31,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 ## 2025-2026 Changes to Make
 
 * Incorporate this [Adafruit Panel Mount Micro SD Card Extender](https://www.google.com/aclk?sa=l&ai=DChcSEwjj9bOK6cmKAxXBVEcBHVRjHN4YABASGgJxdQ&ae=2&aspm=1&co=1&ase=5&gclid=Cj0KCQiAvbm7BhC5ARIsAFjwNHsn8yJzOILmMZRqH4E_HPufaiggZcexFWYqg4a0y1KrF-u19AfAwZwaAi_wEALw_wcB&sig=AOD64_018L6tCDBYVmc7ekdmUu69rXhYmw&ctype=5&q=&ved=2ahUKEwjsy62K6cmKAxUiFFkFHVE7BFwQww8oAnoECAYQDA&adurl=) for easier use. This will require a waterproof screw on or press fit cover but will make removing the microSD far easier
+     * I think we can also just place a microSD card slot for the other end of that panel mount directly to the PCB. It looks like the "reader" we use now just does some voltage regulation and level shifting, but since the ESP32 already uses 3.3V we may be OK without the additional hardware
 
 * Include external pull-up resistors for any input pins on 34, 35, 36, or 39 since these do not have internal pullups
 
