@@ -10,6 +10,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * The Ultimate GPS Symbol labels the RX pin as TXD and the TX pin as RXD, so now RX goes to RX and TX goes to TX and hardware serial does not work. Planning on moving to software serial unless I decide to buy a new PCB
     * Nevermind, it looks like RX pin on GPS module goes to GPIO 17 on ESP32 (Hardware Serial 2 TX) and TX on GPS goes to GPIO 16 (Hardware Serial 2 RX), so all should be good. Still planning on updating PCB file to be clearer
+    * It appears the reason for the lack of communication with the PC over hardware serial may be that the Ultimate GPS is receiving 5V on the VIN pin. I am going to switch this to 3.3V to match the ESP32's logic level and see if that works.
 
 * The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
 
