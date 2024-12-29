@@ -15,6 +15,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
     * What fixed it (partially) was reading the data directly to serial without adafruit's parsing stuff:   Serial2.begin(9600, SERIAL_8N1, 16, 17);
     * It seems that the Adafruit code does not properly initialize the Serial2 port for reading data
     * The AdafruitGPSTestSketch works to receive and parse data. Now, I'm going to try to switch back to 5V and see if that still works. Adafruit says the GPS TX pin is 3.3V logic level (seemingly regardless of VIN voltage), and on GPS RX, "You can use use 3.3V or 5V logic, there is a logic level shifter."
+    * Still works even VIN is given +5V, so I will not be cutting the trace and soldering a 3.3V jumper.
 
 * The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
 
