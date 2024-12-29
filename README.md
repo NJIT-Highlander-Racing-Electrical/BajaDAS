@@ -6,32 +6,29 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * I had some issues with the SD card where I would get the message that "The physical drive cannot work." It turned out to be a bad reader.
   
-* Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I will be soldering two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
+* Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I soldered two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
 
-* The Ultimate GPS Symbol labels the RX pin as TXD and the TX pin as RXD, so now RX goes to RX and TX goes to TX and hardware serial does not work. Planning on moving to software serial unless I decide to buy a new PCB
-    * Nevermind, it looks like RX pin on GPS module goes to GPIO 17 on ESP32 (Hardware Serial 2 TX) and TX on GPS goes to GPIO 16 (Hardware Serial 2 RX), so all should be good. Still planning on updating PCB file to be clearer
-    * It appears the reason for the lack of communication with the PC over hardware serial may be that the Ultimate GPS is receiving 5V on the VIN pin. I am going to switch this to 3.3V to match the ESP32's logic level and see if that works.
-    * Still not fixed
-    * What fixed it (partially) was reading the data directly to serial without adafruit's parsing stuff:   Serial2.begin(9600, SERIAL_8N1, 16, 17);
+* The Ultimate GPS Module was not communicating properly with the ESP32 over Hardware Serial 2
+    * Originally, I thought this was because the module was given 5V on VIN and was not operating at the proper logic level.
+    * However, I found that it does work at either voltage due to the following:
+        *  Adafruit says the GPS TX pin is 3.3V logic level (seemingly regardless of VIN voltage)
+        *  On GPS RX, "You can use use 3.3V or 5V logic, there is a logic level shifter."
+    * I was able to get communication working by reading the data directly to serial without adafruit's parsing stuff: Serial2.begin(9600, SERIAL_8N1, 16, 17);
     * It seems that the Adafruit code does not properly initialize the Serial2 port for reading data
-    * The AdafruitGPSTestSketch works to receive and parse data. Now, I'm going to try to switch back to 5V and see if that still works. Adafruit says the GPS TX pin is 3.3V logic level (seemingly regardless of VIN voltage), and on GPS RX, "You can use use 3.3V or 5V logic, there is a logic level shifter."
-    * Still works even VIN is given +5V, so I will not be cutting the trace and soldering a 3.3V jumper.
-
-* The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
-
-* I need to update the DAS enclosure for next year to use Adafruit's panel mount SD card port and to decrease wall thickness where the SMA antenna adapter connection is
+    * The AdafruitGPSTestSketch uplaoded in this repo works to receive and parse data and is a good starting point for the full DAS program
 
 ## Important Notes + 2025 Research Topics
 
 * It would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
-* In the 2024-2025 DAQ, it would be beneficial to include a voltage divider or some other method of determining battery voltage for a low battery warning
-* In the 2024-2025 DAQ, a GPS upgrade should be made to something like the Adafruit Ultimate GPS Breakout - PA1616S (https://www.adafruit.com/product/746) that can poll up to 10Hz
-
-* It would be beneficial to include a switch for data logging on/off and two buttons for miscellaneous functions that we may need in the future
 
 * Occassionaly, numbers will get shifted or have other erroneous digits added to them in the SD logging. Maybe a buffer should be added that saves every value to that so that no values are misprinted to the log.
 
 * Make sure that the DAS this year saves more of the GPS data. Heading, velocity, elevation, etc
+
+* Make sure that the DAS uses the voltage divider onboard for battery level measurement
+    * This will have to be calibrated manually by measuring battery voltage
+
+* Make sure that the GPS is reporting new data at a 10Hz rate
 
 * Make sure DAS transmits vehicle velocity to CAN Bus (for wheel speed sensors slip/skid detection)
 
@@ -41,6 +38,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Incorporate this [Adafruit Panel Mount Micro SD Card Extender](https://www.google.com/aclk?sa=l&ai=DChcSEwjj9bOK6cmKAxXBVEcBHVRjHN4YABASGgJxdQ&ae=2&aspm=1&co=1&ase=5&gclid=Cj0KCQiAvbm7BhC5ARIsAFjwNHsn8yJzOILmMZRqH4E_HPufaiggZcexFWYqg4a0y1KrF-u19AfAwZwaAi_wEALw_wcB&sig=AOD64_018L6tCDBYVmc7ekdmUu69rXhYmw&ctype=5&q=&ved=2ahUKEwjsy62K6cmKAxUiFFkFHVE7BFwQww8oAnoECAYQDA&adurl=) for easier use. This will require a waterproof screw on or press fit cover but will make removing the microSD far easier
      * I think we can also just place a microSD card slot for the other end of that panel mount directly to the PCB. It looks like the "reader" we use now just does some voltage regulation and level shifting, but since the ESP32 already uses 3.3V we may be OK without the additional hardware
+     * Update the 3D Model and the PCB accordingly for these changes
 
 * Include external pull-up resistors for any input pins on 34, 35, 36, or 39 since these do not have internal pullups
 
