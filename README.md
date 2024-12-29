@@ -11,6 +11,10 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 * The Ultimate GPS Symbol labels the RX pin as TXD and the TX pin as RXD, so now RX goes to RX and TX goes to TX and hardware serial does not work. Planning on moving to software serial unless I decide to buy a new PCB
     * Nevermind, it looks like RX pin on GPS module goes to GPIO 17 on ESP32 (Hardware Serial 2 TX) and TX on GPS goes to GPIO 16 (Hardware Serial 2 RX), so all should be good. Still planning on updating PCB file to be clearer
     * It appears the reason for the lack of communication with the PC over hardware serial may be that the Ultimate GPS is receiving 5V on the VIN pin. I am going to switch this to 3.3V to match the ESP32's logic level and see if that works.
+    * Still not fixed
+    * What fixed it (partially) was reading the data directly to serial without adafruit's parsing stuff:   Serial2.begin(9600, SERIAL_8N1, 16, 17);
+    * It seems that the Adafruit code does not properly initialize the Serial2 port for reading data
+    * The AdafruitGPSTestSketch works to receive and parse data. Now, I'm going to try to switch back to 5V and see if that still works. Adafruit says the GPS TX pin is 3.3V logic level (seemingly regardless of VIN voltage), and on GPS RX, "You can use use 3.3V or 5V logic, there is a logic level shifter."
 
 * The battery voltage reading works, but we'll need to calibrate this based on known battery voltages to account for voltage drop in the power bus or minor variations in resistor values.
 
