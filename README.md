@@ -2,7 +2,7 @@
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
-## Andrew's Winter Break Updates
+## King Andrew's Winter Break Updates
 
 * I had some issues with the SD card where I would get the message that "The physical drive cannot work." It turned out to be a bad reader.
   
@@ -78,9 +78,10 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## Quick Start
 
-1. Install the necessary libraries via the Arduino IDE's Library Manager or manually.
-2. Connect the LSM9DS1 and GPS modules to the specified pins.
-3. Insert a formatted SD card.
-4. Upload the `BajaDAS` code to your microcontroller.
-5. Use the Serial Monitor at a `115200` baud rate to view data.
-6. Post-race, retrieve the SD card and access the `.csv` files for analysis.
+Note: PlatformIO is required for this project.
+
+1. Open the project files in PlatformIO.
+2. Insert a formatted MicroSD card into the BajaDAS system.
+3. Use the `PlatformIO: Upload` button to load the code onto the microcontroller.
+4. Use a Serial Monitor at a `115200` baud rate to view data.
+5. Post-race, retrieve the SD card and access the `.csv` files for analysis.
