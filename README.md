@@ -4,7 +4,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## King Andrew's Winter Break Updates
 
-* I had some issues with the SD card where I would get the message that "The physical drive cannot work." It turned out to be a bad reader.
+* I had some issues with the SD card where I would get the message that "The physical drive cannot work." It turned out to be a bad reader, there was a missing capacitor on the board
   
 * Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I soldered two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
 
@@ -33,6 +33,7 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 * Make sure DAS transmits vehicle velocity to CAN Bus (for wheel speed sensors slip/skid detection)
 
 * Also make it very easy to switch timezone offsets for GPS time (we'll be in Arizona)
+* Make it automatically change time zones based on longitude?
 
 ## 2025-2026 Changes to Make
 
