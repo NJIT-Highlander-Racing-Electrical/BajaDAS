@@ -1,13 +1,18 @@
-# BajaDAS: Data Acquisition System for Highlander Racing
+# BajaDAS: Readme and Quickstart Guide
 
-BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
+## PlatformIO 
+
+1. Install `Visual Studio Code`.
+2. Install the `PlatformIO IDE` and `GitHub Repositories` extensions.
+3. From a new window, click on `Clone Git Repository` and follow prompts to download a local copy of the code.
 
 ## Quick Start
 
-Note: PlatformIO is required for this project.
-
-1. Open the project files in PlatformIO.
-2. Insert a formatted MicroSD card into the BajaDAS system.
+1. Insert a formatted `MicroSD` card into the BajaDAS system.
+2. Open the project folder in `Visual Studio Code`.
 3. Use the `PlatformIO: Upload` button to load the code onto the microcontroller.
-4. Use a Serial Monitor at a `115200` baud rate to view data.
-5. Post-race, retrieve the SD card and access the `.csv` files for analysis.
+4. Post-race, retrieve the SD card and access the `.csv` files for analysis.
+
+## Troubleshooting
+
+- The main config file is `platformio.ini`.
