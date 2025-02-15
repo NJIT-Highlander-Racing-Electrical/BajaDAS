@@ -26,7 +26,7 @@ int gasPedalDepression = 0;
 int brakePedalDepression = 0;
 int steeringWheelPosition = 0;
 
-int wheelSpeed1 = 0;
+int wheelSpeed1 = 0; // there's no wheelSpeed2...
 
 int fuelLevel = 0;
 
@@ -45,13 +45,14 @@ int timeSecond = 0;
 
 String dateString = "";
 String dayString = "";
-String YearString = "";
+String yearString = "";
 
 int dateMonth = 0;
 int dateDay = 0;
 int dateYear = 0;
 
-bool dasEnabled = true;
+// MicroSD logging on/off
+bool sdLoggingEnabled = true;
 // const int LoggingModeSwitch = 13;
 bool dasError = false;
 
@@ -67,10 +68,6 @@ const int8_t M_CS = 22;
 
 const uint8_t SDCARD_CS = 5;
 
-// drive state switch variables
-bool driveState; // true when in 4WD and false in 2WD
-bool driveStateUnknown = true; //If 2WD/4WD switch has not been pressed yet, the state is unknown (Schrödinger's 2WD/4WD Switch)
-
 // gps initialization variables
 String latitude, longitude;
 String latitudeDecimal, longitudeDecimal;
@@ -84,7 +81,7 @@ sensors_event_t a, m, g, temp;
 
 // LSM9DS1 accelerations when static and level (without vectors) - measured values
 const double initialAccelerationX = 1.87; // should be zero
-const double initialAccelerationY = 9.16; // should be 9.81
+const double initialAccelerationY = 9.16; // should be 9.81 (gravity)
 const double initialAccelerationZ = 3.34; // should be zero
 
 const double gravity = 9.81;
@@ -147,7 +144,8 @@ void setup() {
   setupSD();
   setupLSM();
   setupLSMOffsets(initialAccelerationX, initialAccelerationY, initialAccelerationZ);
-  // setupLoggingMode();
+  pinMode(13, INPUT_PULLUP); 
+  readLoggingMode();
   setupGPS();
   Serial.println ("Finishing Setup");
 }
@@ -225,7 +223,7 @@ void setupSD()
 
   uint8_t cardType = SD.cardType();
 
-  if(cardType == CARD_NONE){
+  if (cardType == CARD_NONE){
     Serial.println("No SD card attached");
     dasError = true;
     return;
@@ -273,21 +271,21 @@ void setupGPS() {
   Serial.println("Found GPS");
 }
 
-void setupLoggingMode() {
+/* void setupLoggingMode() {
   Serial.println("Reading DAS switch");
   pinMode(13, INPUT_PULLUP);
   if (digitalRead(13) == HIGH) {
-    dasEnabled = false;
+    sdLoggingEnabled = false;
     Serial.println("DAS RECORDING DISABLED");
   }
   else {
-    dasEnabled = true;
+    sdLoggingEnabled = true;
     Serial.println("DAS RECORDING ENABLED");
   }
-}
+} */
 
 void logSD() {
-  if (dasEnabled) {
+  if (sdLoggingEnabled) {
     logFile = SD.open(logFilePath, FILE_APPEND);
     if (logFile) {
       if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, 
@@ -400,21 +398,19 @@ void setNextAvailableFilePath() {
 }
 
 String readLoggingMode() {
-
  if (digitalRead(13) == HIGH) {
-    dasEnabled = false;
+    sdLoggingEnabled = false;
   }
   else {
-    dasEnabled = true;
+    sdLoggingEnabled = true;
   }
 
-  if (dasEnabled) {
-    return "LOG ON";
+  if (sdLoggingEnabled) {
+    return "SD LOG ON";
   }
   else {
-    return "LOG OFF";
+    return "SD LOG OFF";
   }
-
 }
 
 //Function to convert string NMEA data from GPS into usable decimal degrees format
@@ -432,6 +428,7 @@ String convertToDecimalDegrees(const String& coordinate, bool isLatitude) {
     return String(decimalDegrees, 6); // 6 decimal places
 }
 
+// Take the raw gps data and convert
 void parseGPGGA(String data) {
   if (data.startsWith("$GPGGA")) {
     // Split the data using commas
@@ -462,7 +459,7 @@ void parseGPGGA(String data) {
     hourString = timedat.substring(0,2); 
 
     int hours = hourString.toInt(); // Convert the string to an integer
-    hours -= 4;
+    hours -= 5;
     // Handle cases where the offset causes the hour to go negative
     if (hours < 0) {
         hours += 24; // Wrap around to previous day
@@ -639,7 +636,7 @@ void sendCanbus() {
    // Serial.println("Sending dasEnabled");
 
   CAN.beginPacket(0x51);  //sets the ID
-  CAN.print(dasEnabled);  //prints data to CAN Bus just like Serial.print
+  CAN.print(sdLoggingEnabled);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
 
   //  Serial.println("Sent dasEnabled");
@@ -655,6 +652,7 @@ void sendCanbus() {
     delay(5);
   }
 
+  /*
   //  Serial.println("3");
   CAN.beginPacket(0x52);  //sets the ID
   CAN.print(driveState);  //prints data to CAN Bus just like Serial.print
@@ -665,6 +663,7 @@ void sendCanbus() {
   CAN.print(driveStateUnknown);  //prints data to CAN Bus just like Serial.print
   CAN.endPacket();
   delay(5);
+  */
 
  //   Serial.println("5");
   CAN.beginPacket(0x49);  //sets the ID
