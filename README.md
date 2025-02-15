@@ -1,4 +1,4 @@
-# BajaDAS: Data Acquisition System for Highlander Racing test
+# BajaDAS: Data Acquisition System for Highlander Racing
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
