@@ -1,6 +1,0 @@
-(sym_lib_table
-  (version 7)
-  (lib (name "ESP 32")(type "KiCad")(uri "C:/Users/alex/Downloads/ESP 32.kicad_sym")(options "")(descr ""))
-  (lib (name "adafruit_ultimate_gps")(type "KiCad")(uri "${KIPRJMOD}/adafruit_ultimate_gps.kicad_sym")(options "")(descr ""))
-  (lib (name "Adafruit Ultimate GPS")(type "KiCad")(uri "${KIPRJMOD}/Adafruit Ultimate GPS.kicad_sym")(options "")(descr ""))
-)
