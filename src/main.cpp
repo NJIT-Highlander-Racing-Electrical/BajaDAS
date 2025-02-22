@@ -15,6 +15,7 @@
 #include <SPI.h>
 #include <Adafruit_LSM9DS1.h>
 #include <HardwareSerial.h>
+#include <BajaCAN.h>
 
 // data variables
 int cvtPrimaryRPM = 0;
@@ -78,18 +79,6 @@ int sats = 0;
 Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1(XG_CS, M_CS);
 sensors_event_t a, m, g, temp;
 
-// LSM9DS1 accelerations when static and level (without vectors) - measured values
-const double initialAccelerationX = 1.87; // should be zero
-const double initialAccelerationY = 9.16; // should be 9.81 (gravity)
-const double initialAccelerationZ = 3.34; // should be zero
-
-const double gravity = 9.81;
-
-// LSM9DS1 offset angles in radians
-double offsetAngleX;
-double offsetAngleY;
-double offsetAngleZ;
-
 // last observed drive state 
 String lastState;
 String lastDasState;
@@ -101,19 +90,14 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 // function declarations here:
 void setupSD();
 void setupLSM();
-void setupLSMOffsets(double x, double y, double z);
 void setupGPS();
-void setupLoggingMode();
+// void setupLoggingMode();
 void readLSM();
 String readLoggingMode();
 void readGPS();
 
 void parseGPGGA(String data);
 String convertToDecimalDegrees(const String& coordinate, bool isLatitude);
-
-void updateCanbus();
-void updateCanbusData();
-void sendCanbus();
 
 void logSerial();
 void logSD();
@@ -126,17 +110,6 @@ void setup() {
   Serial.begin(115200);
   while(!Serial) {
     delay(1);
-  }
-
-  
-  CAN.setPins(RX_GPIO_NUM, TX_GPIO_NUM);
-
-  if (!CAN.begin(1000E3)) {
-    Serial.println("Starting CAN failed!");
-    while (1)
-      ;
-  } else {
-    Serial.println("CAN Initialized");
   }
 
   // setup connections to various modules
@@ -201,14 +174,6 @@ void setupLSM()
   lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_245DPS);
   // lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_500DPS);
   // lsm.setupGyro(lsm.LSM9DS1_GYROSCALE_2000DPS);
-}
-
-void setupLSMOffsets(double x, double y, double z) {
-
-  offsetAngleX = asin(gravity / x);
-  offsetAngleY = acos(initialAccelerationY / y);
-  offsetAngleZ = asin(gravity / z);
-
 }
 
 void setupSD()
