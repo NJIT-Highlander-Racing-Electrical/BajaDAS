@@ -15,7 +15,6 @@
 #include <SPI.h>
 #include <Adafruit_LSM9DS1.h>
 #include <HardwareSerial.h>
-#include <CAN.h>
 
 // data variables
 int cvtPrimaryRPM = 0;
