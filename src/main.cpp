@@ -316,7 +316,26 @@ void logSerial() { // Write all values to the console with tabs in between them
 }
 
 void updateBatteryPercentage() {
-  batteryVoltage = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.03 / batVoltageDividerRatio; // multiplied by 1.03 to account for voltage drop
+
+  int numSamples = 10;
+  
+  float volatageReadingList[numSamples];
+
+  // take 10 readings for averaging
+  for (int i = 0; i < numSamples; i++) {
+   voltageReadingList[i] = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.025 / batVoltageDividerRatio; // multiplied by 1.025 to account for voltage drop
+  }
+
+  // sum up those 10 readings
+  float readingsSum = 0;
+  for (int i = 0; i < numSamples; i++) {
+  readingsSum += voltageReadingList[i];
+  }
+
+  // calculate average
+
+  batteryVoltage = readingsSum/numSamples;
+  
   if (batteryVoltage >= 12.60) batteryPercentage = 100;
   else if (batteryVoltage >= 12.54) batteryPercentage = 95;
   else if (batteryVoltage >= 12.48) batteryPercentage = 90;
