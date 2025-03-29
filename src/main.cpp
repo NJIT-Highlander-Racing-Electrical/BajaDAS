@@ -95,6 +95,8 @@ void setup() {
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(switchPin, INPUT_PULLUP);
 
+  pinMode(batteryPin, INPUT);
+
   // start serial and wait for it to connect
   Serial.begin(115200);
   while(!Serial) {
@@ -131,7 +133,7 @@ void loop() {
 
   // log data to microsd card and serial connection
   logSD();
-  logSerial();
+  // logSerial();
 }
 
 // function definitions here:
@@ -314,7 +316,7 @@ void logSerial() { // Write all values to the console with tabs in between them
 }
 
 void updateBatteryPercentage() {
-  batteryVoltage = analogRead(batteryPin) / 4095 * 3.3 / batVoltageDividerRatio;
+  batteryVoltage = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.03 / batVoltageDividerRatio; // multiplied by 1.03 to account for voltage drop
   if (batteryVoltage >= 12.60) batteryPercentage = 100;
   else if (batteryVoltage >= 12.54) batteryPercentage = 95;
   else if (batteryVoltage >= 12.48) batteryPercentage = 90;
@@ -337,6 +339,7 @@ void updateBatteryPercentage() {
   else if (batteryVoltage >= 10.62) batteryPercentage = 5;
   else if (batteryVoltage >= 10.50) batteryPercentage = 0;
   else batteryPercentage = 0;  // Below 10.5V is over-discharged
+  Serial.println(batteryVoltage);
   Serial.println(batteryPercentage);
 }
 
