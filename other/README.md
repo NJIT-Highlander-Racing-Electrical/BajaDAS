@@ -25,9 +25,6 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 * Make sure that the DAS this year saves more of the GPS data. Heading, velocity, elevation, etc
 
-* Make sure that the DAS uses the voltage divider onboard for battery level measurement
-    * This will have to be calibrated manually by measuring battery voltage
-
 * Make sure that the GPS is reporting new data at a 10Hz rate
 
 * Make sure DAS transmits vehicle velocity to CAN Bus (for wheel speed sensors slip/skid detection)
