@@ -319,7 +319,7 @@ void updateBatteryPercentage() {
 
   int numSamples = 10;
   
-  float volatageReadingList[numSamples];
+  float voltageReadingList[numSamples];
 
   // take 10 readings for averaging
   for (int i = 0; i < numSamples; i++) {
