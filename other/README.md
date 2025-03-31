@@ -2,37 +2,39 @@
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
-## Andrew's Winter Break Updates
+## DAS To-Do
 
-* I had some issues with the SD card where I would get the message that "The physical drive cannot work." It turned out to be a bad reader, there was a missing capacitor on the board
-  
-* Pins 34, 35, 36, 39 do not have internal pullups but we have buttons attahed to 34 and 35. Since buying a whole new PCB for such a minor issue is a royal PITA, I soldered two pullup resistors on the underside of the PCB on the ESP32 from 3.3V to 34 and 35
+* Add a variable that can easily change the time zone based on GMT (e.g. Marana, AZ is GMT-7 so be able to pass in -7)
+* Ensure all CAN Bus variables for DAS are being parsed and transmitted
+   * Accel X
+   * Accel Y
+   * Accel Z
+   * Gyro Roll
+   * Gyro Pitch
+   * Gyro Yaw
+   * GPS Latitude
+   * GPS Longitude
+   * GPS Time -- Hour
+   * GPS Time -- Minute
+   * GPS Time -- Second
+   * GPS Date -- Month
+   * GPS Date -- Day
+   * GPS Date -- Year
+   * GPS Altitude
+   * GPS Velocity
+   * Battery Percentage
+* Configure DAS Serial Output to be easily parseable by Serial Studio (for wired connections)
+    * This can just be comma separated variables with a newline character at the end of the data string, everything else is parsed and processed inside of SerialStudio
+* Ensure "zeroing" accelerometer and correcting the readings for mounting offsets is working properly.
+* Ensure numbers are not getting shifted or having other erroneous digits in SD logging.
+* Make sure DAS is operating at 10Hz poll rate
+* Ensure DAS is ONLY receiving "SD Logging Active" bit from dashbaord
+     * Ensure that transition from inactive to active creates a new file
+         * If GPS has a fix, update file metadata to include correct time
+         * Can also generate the name based off of time/date
+         * If GPS does not have a fix, just create a log name (e.g. log3)
+     * Ensure that transition from active to inactive saves the data file
 
-* The Ultimate GPS Module was not communicating properly with the ESP32 over Hardware Serial 2
-    * Originally, I thought this was because the module was given 5V on VIN and was not operating at the proper logic level.
-    * However, I found that it does work at either voltage due to the following:
-        *  Adafruit says the GPS TX pin is 3.3V logic level (seemingly regardless of VIN voltage)
-        *  On GPS RX, "You can use use 3.3V or 5V logic, there is a logic level shifter."
-    * I was able to get communication working by reading the data directly to serial without adafruit's parsing stuff: Serial2.begin(9600, SERIAL_8N1, 16, 17);
-    * It seems that the Adafruit code does not properly initialize the Serial2 port for reading data
-    * The AdafruitGPSTestSketch uplaoded in this repo works to receive and parse data and is a good starting point for the full DAS program
-
-## Important Notes + 2025 Research Topics
-
-* It would be beneficial to add code to offset the "zero" point of the accelerometer/correct the readings. It is not mounted perfectly square on the car relative to ground. This code could also correct gyro readings based off of accelerometer orientation
-
-* Occassionaly, numbers will get shifted or have other erroneous digits added to them in the SD logging. Maybe a buffer should be added that saves every value to that so that no values are misprinted to the log.
-
-* Make sure that the DAS this year saves more of the GPS data. Heading, velocity, elevation, etc
-
-* Make sure that the GPS is reporting new data at a 10Hz rate
-
-* Make sure DAS transmits vehicle velocity to CAN Bus (for wheel speed sensors slip/skid detection)
-
-* Also make it very easy to switch timezone offsets for GPS time (we'll be in Arizona)
-* Make it automatically change time zones based on longitude?
-
-* Transfer Data Logging switch from DAS to Dashboard buttons. This makes more sense for the driver to be able to press a button on the dash to enable data logging (e.g. before an acceleration test run) and be able to stop the data logging after the test
 
 ## 2025-2026 Changes to Make
 
