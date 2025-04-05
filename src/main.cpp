@@ -230,6 +230,18 @@ void setupSD()
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 }
 
+
+void setupGPS()
+{
+  Serial.print("Initializing GPS... ");
+  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
+  while (!GPS_Serial)
+  {
+    delay(1);
+  }
+  Serial.println("Found GPS");
+}
+
 // Runs once whenever a log file is started from dashboard button
 void createFileSD()
 {
@@ -267,17 +279,6 @@ void createFileSD()
     Serial.println();
     dasError = true;
   }
-}
-
-void setupGPS()
-{
-  Serial.print("Initializing GPS... ");
-  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
-  while (!GPS_Serial)
-  {
-    delay(1);
-  }
-  Serial.println("Found GPS");
 }
 
 void logSD()
@@ -339,9 +340,9 @@ void logSerial()
 
   // Time data
   Serial.print(hourString);
-  Serial.print(":");
+  Serial.print(sepChar);
   Serial.print(minuteString);
-  Serial.print(":");
+  Serial.print(sepChar);
   Serial.print(secondString);
   Serial.print(sepChar);
   Serial.print(time_from_start); // Assuming time_from_start is program time in seconds. This can be plotted on the x-axis!
