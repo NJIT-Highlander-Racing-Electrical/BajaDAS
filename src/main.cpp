@@ -89,6 +89,7 @@ void readGPS();
 
 void parseGPZDA(String data);
 void parseGPGGA(String data);
+void parseGPVTG(String data);
 // void parseGPRMC(String data);
 String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
 
@@ -726,24 +727,31 @@ void parseGPGGA(String data) {
       hasFix = false;
       sats = 0;
     }
+
+// Extract altitude if available
+if (fieldCount > 9 && fields[9].length() > 0) {
+  gpsAltitude = fields[9].toFloat();  // Altitude in meters
+} else {
+  gpsAltitude = -1;  // Default or error value
+}
+
+
   }
 }
 
-// Take the raw gps data and convert - $GPRMC
-/*
-void parseGPRMC(String data) {
-  if (data.startsWith("$GPRMC")) {
+void parseGPVTG(String data) {
+  if (data.startsWith("$GPVTG")) {
     // Split the data using commas
-    int maxFields = 12;  // GPGGA has a maximum of 15 fields
+    int maxFields = 10;  // GPVTG has a maximum of 10 fields
     String fields[maxFields];
     int fieldCount = 0;
-    
+
     int start = 0;
     int pos = data.indexOf(',');
     while (pos != -1 && fieldCount < maxFields) {
       fields[fieldCount] = data.substring(start, pos);
       fieldCount++;
-      
+
       start = pos + 1;
       pos = data.indexOf(',', start);
     }
@@ -751,75 +759,24 @@ void parseGPRMC(String data) {
       fields[fieldCount++] = data.substring(start);
     }
 
-    // Extract time information if available
-    if (fieldCount > 0 && fields[1].length() > 0) {
-      timedat = fields[1];
+    // Extract heading (course over ground) and velocity (in knots)
+    if (fieldCount > 1 && fields[1].length() > 0) {
+      gpsHeading = fields[1].toFloat();  // Heading in degrees
     } else {
-      timedat = "err";
+      gpsHeading = -1;  // Default or error value
     }
 
-    hourString = timedat.substring(0,2); 
-
-    int hours = hourString.toInt(); // Convert the string to an integer
-    hours -= 5;
-    // Handle cases where the offset causes the hour to go negative
-    if (hours < 0) {
-      hours += 24; // Wrap around to previous day
-    }
-
-    if (hours == 0) {
-      gpsTimeHour = 12; // Midnight
-    } else if (hours > 12) {
-      gpsTimeHour = hours - 12; // Afternoon/evening
+    // Extract velocity (speed over ground) in knots
+    if (fieldCount > 5 && fields[5].length() > 0) {
+      gpsVelocity = fields[5].toFloat();  // Velocity in knots
     } else {
-      gpsTimeHour = hours; // Morning
+      gpsVelocity = -1;  // Default or error value
     }
 
-    hourString = String(gpsTimeHour);
-     if (gpsTimeHour < 10) {
-      hourString = "0" + hourString;
-    }
+    // Convert velocity to miles per hour (1 knot = 1.15078 MPH)
+    gpsVelocity *= 1.15078;
 
-    minuteString = timedat.substring(2,4);
-    gpsTimeMinute = minuteString.toInt();
-    secondString = timedat.substring(4,6);
-    gpsTimeSecond = secondString.toInt();
-
-    // Extract date if available - ddmmyy
-    if (fieldCount > 8 && fields[9].length() > 0) {
-      gpsDateDay = fields[9].substring(0,1).toInt();
-      gpsDateMonth = fields[9].substring(2,3).toInt();
-      gpsDateYear = fields[9].substring(4,5).toInt();
-    } else {
-      gpsDateDay = 99;
-      gpsDateMonth = 99;
-      gpsDateYear = 99;
-    }
-
-    // Extract latitude and longitude if available
-    if (fieldCount > 5 && fields[3].length() > 0 && fields[5].length() > 0) {
-      latitude = fields[3];
-      longitude = fields[5];
-    } else {
-      latitude = "";
-      longitude = "";
-    }
-
-    // Convert latitude and longitude NMEA strings into decimal degrees strings (for Google Maps, GPS Visualizer, etc)
-    if (latitude.length() > 0 && longitude.length() > 0) {
-      // Convert NMEA coordinates to decimal degrees strings
-      latitudeDecimal = convertToDecimalDegrees(latitude, 1);
-      gpsLatitude = latitudeDecimal.toFloat();
-      longitudeDecimal = "-" + convertToDecimalDegrees(longitude, 0);
-      gpsLongitude = longitudeDecimal.toFloat();
-    }
-
-    // Extract fix status and satellite count
-    if (fieldCount > 1) {
-      gpsStatus = fields[2]; // A = ok (ie. fix established), V = invalid (ie. not enough satellites)
-    } else {
-      gpsStatus = "err";
-    }
+    
   }
 }
-*/
+
