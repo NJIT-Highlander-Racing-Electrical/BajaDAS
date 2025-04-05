@@ -3,13 +3,10 @@
 // BajaDAS 2025
 // Alexander Huegler
 
+#define TX_GPIO_NUM 25 // Connects to CTX
+#define RX_GPIO_NUM 26 // Connects to CRX
 
-#define TX_GPIO_NUM 25  // Connects to CTX
-#define RX_GPIO_NUM 26  // Connects to CRX
-
-// Pin 13 - Switch
-// Pin 34 - Button 2
-// Pin 35 - Button 1
+bool serialStudioLogging = true; // Set to true if using SerialStudio, false if just using Serial Monitor
 
 #include <math.h>
 #include <string>
@@ -23,6 +20,7 @@
 #include <HardwareSerial.h>
 #include <BajaCAN.h>
 
+// GPS Date/Time strings
 String hourString = "";
 String minuteString = "";
 String secondString = "";
@@ -32,6 +30,7 @@ String dayString = "";
 String monthString = "";
 String yearString = "";
 
+// Gets time zone from GPS data string for calculating local time from UTC
 String timeZoneOffsetString = "-99";
 int timeZoneOffset = -99;
 
@@ -48,18 +47,19 @@ float batVoltageDividerRatio = 0.23255813953;
 float batteryVoltage;
 
 // time from program start in seconds
-float t;
+float time_from_start;
 
 // UTC time of gps observation (hours/minutes/seconds.decimal-seconds)
 String timedat = "init";
 
-// chip selects
+// Chip selects for LSM9DS1
 const int8_t XG_CS = 21;
 const int8_t M_CS = 22;
 
+// Chip select pin for MicroSD reader
 const uint8_t SDCARD_CS = 5;
 
-// gps initialization variables
+// GPS initialization variables
 String latitude, longitude;
 String latitudeDecimal, longitudeDecimal;
 String gpsStatus;
@@ -73,6 +73,8 @@ sensors_event_t a, m, g, temp;
 
 // log file setup
 File logFile;
+bool fileCreated = false; // This variable is used to know if we are creating a new file, or just simply logging (in the main loop)
+bool filenameIsDescriptive = false; // So we know what type of file we made. We don't want the conditions to change mid-logging and our files to get corrupted
 String logFilePathDescriptive = "/yyyy-mm-dd_hh-mm-ss.csv";
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
 
@@ -80,7 +82,7 @@ char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminat
 void setupSD();
 void setupLSM();
 void setupGPS();
-// void setupLoggingMode();
+void setupLoggingMode();
 void readLSM();
 void updateBatteryPercentage();
 void readGPS();
@@ -88,24 +90,27 @@ void readGPS();
 void parseGPZDA(String data);
 void parseGPGGA(String data);
 // void parseGPRMC(String data);
-String convertToDecimalDegrees(const String& coordinate, bool isLatitude);
+String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
 
 void logSerial();
 void logSD();
 
 void setNextAvailableFilePath();
+void createFileSD();
 
-void setup() {
+void setup()
+{
 
+  // Initialize all input pins
   pinMode(buttonPin1, INPUT_PULLUP);
   pinMode(buttonPin2, INPUT_PULLUP);
   pinMode(switchPin, INPUT_PULLUP);
-
   pinMode(batteryPin, INPUT);
 
   // start serial and wait for it to connect
   Serial.begin(115200);
-  while(!Serial) {
+  while (!Serial)
+  {
     delay(1);
   }
 
@@ -117,19 +122,13 @@ void setup() {
   // setup CAN
   setupCAN(DAS);
 
-  Serial.println ("Finishing Setup");
+  Serial.println("Finishing Setup");
 }
 
-void loop() {
-  delay(0); // limit loop to about 75Hz, ensuring we stay under the bandwidth for serial communication with our logPrint() function
-             // amount of functions per loop has changed since this number (13) was picked, so changing it should be possible
+void loop()
+{
 
-
-  // update all global data variables from CAN-Bus
-
-  // updateCanbusData();
-
-  // sendCanbus();
+  time_from_start = millis() / 1000.0;
 
   // read data from modules
 
@@ -137,9 +136,26 @@ void loop() {
   readGPS();
   updateBatteryPercentage();
 
-  // log data to microsd card and serial connection
-  logSD();
-  // logSerial();
+  // log data to serial connection
+  logSerial();
+
+  // log data to SD
+  if (sdLoggingActive)
+  {
+
+    // If we have not already, create the file to log to
+    if (!fileCreated)
+    {
+      createFileSD();
+      fileCreated = true;
+    }
+
+    logSD(); // Save the most recent data to the SD card
+  }
+  else // If we are here, our logging ended and we should reset the file created bit (so we can create a new file next time logging is started)
+  {
+    fileCreated = false;
+  }
 }
 
 // function definitions here:
@@ -150,7 +166,8 @@ void setupLSM()
   if (!lsm.begin())
   {
     Serial.println("Oops ... unable to initialize the LSM9DS1.");
-    while (!lsm.begin());
+    while (!lsm.begin())
+      ;
   }
   Serial.println("Found LSM9DS1 9DOF");
 
@@ -159,7 +176,7 @@ void setupLSM()
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
-  
+
   // 2.) Set the magnetometer sensitivity
   lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
   // lsm.setupMag(lsm.LSM9DS1_MAGGAIN_8GAUSS);
@@ -175,96 +192,126 @@ void setupLSM()
 void setupSD()
 {
   Serial.print("Initializing SD card... ");
-  if (!SD.begin(SDCARD_CS)) {
+  if (!SD.begin(SDCARD_CS))
+  {
     Serial.println("Oops... unable to initialize the SD card.");
     dasError = true;
-    while (!SD.begin(SDCARD_CS));
+    while (!SD.begin(SDCARD_CS))
+      ;
   }
 
   uint8_t cardType = SD.cardType();
 
-  if (cardType == CARD_NONE){
+  if (cardType == CARD_NONE)
+  {
     Serial.println("No SD card attached");
     dasError = true;
     return;
   }
 
   Serial.print("SD Card Type: ");
-  if(cardType == CARD_MMC){
+  if (cardType == CARD_MMC)
+  {
     Serial.println("MMC");
-  } else if(cardType == CARD_SD){
+  }
+  else if (cardType == CARD_SD)
+  {
     Serial.println("SDSC");
-  } else if(cardType == CARD_SDHC){
+  }
+  else if (cardType == CARD_SDHC)
+  {
     Serial.println("SDHC");
-  } else {
+  }
+  else
+  {
     Serial.println("UNKNOWN");
   }
   uint64_t cardSize = SD.cardSize() / (1024 * 1024);
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
+}
 
-  setNextAvailableFilePath();
-  if (gpsDateDay > 0 && gpsDateDay <= 31) {
+// Runs once whenever a log file is started from dashboard button
+void createFileSD()
+{
+  setNextAvailableFilePath(); // Creates a log path from GPS date/time (if we have it) or from next sequential log number (e.g. "log4")
+
+  if (gpsDateDay > 0 && gpsDateDay <= 31) // Case for if we have a date/time fix
+  {
     logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
-    Serial.printf("Logging to %s", logFilePathDescriptive);
-  } else {
-    logFile = SD.open(logFilePath, FILE_APPEND);
-    Serial.printf("Logging to %s", logFilePath);
+    Serial.printf("Logging to %s : ", logFilePathDescriptive);
+    filenameIsDescriptive = true;
   }
-  
-  if (logFile) {
-    dasError = false;
+  else // Case for if we are using non-descriptive file (e.g. "log4")
+  {
+    logFile = SD.open(logFilePath, FILE_APPEND);
+    Serial.printf("Logging to %s : ", logFilePath);
+    filenameIsDescriptive = false;
+  }
+
+  if (logFile) // If the log file sucessfully opened on the SD Card
+  {
+    dasError = false; // Clear data logging error flag
     Serial.println();
-    if(!logFile.println("Hour, Minute, Second, tfs, mode, daqmode, ax, ay, az, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, temp, gpd, bpd, wheelspeed1"))
+
+    // Print headers to CSV
+    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude, heading, velocity, primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelrpm, fr_wheelrpm, rl_wheelrpm, rr_wheelrpm, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos gas_angle, brake_angle, brake_pressure"))
     {
       Serial.println("Logging Failed.");
     }
     logFile.close();
   }
   // if the file didn't open, print an error:
-  else {
+  else
+  {
     Serial.printf("Failed to open file");
     Serial.println();
     dasError = true;
   }
 }
 
-void setupGPS() {
+void setupGPS()
+{
   Serial.print("Initializing GPS... ");
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
-  while(!GPS_Serial) {
+  while (!GPS_Serial)
+  {
     delay(1);
   }
   Serial.println("Found GPS");
 }
 
-void logSD() { // logging switch is being moved to dashboard, logging on/off will come over CAN
-  if (sdLoggingActive == true) {
-    if (gpsDateDay > 0 && gpsDateDay <= 31) {
-      logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
-      Serial.printf("Loggind to %s", logFilePathDescriptive);
-    } else {
-      logFile = SD.open(logFilePath, FILE_APPEND);
-      Serial.printf("Logging to %s", logFilePath);
-    }
-    if (logFile) {
-      if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, t, "placeholder", "placeholder", a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, gasPedalPercentage, brakePedalPercentage, frontRightWheelRPM, frontLeftWheelRPM, rearRightWheelRPM, rearLeftWheelRPM))
-      {
-        Serial.println("Logging Failed.");
-      }
-    }
-    else {
-      Serial.printf("Failed to open file");
-      Serial.println();
-    }
+void logSD()
+{
+  if (filenameIsDescriptive) // Case for if we have a date/time fix
+  {
+    logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
+    //Serial.printf("Loggind to %s", logFilePathDescriptive);
+  }
+  else // Case for if we are using non-descriptive file (e.g. "log4")
+  {
+    logFile = SD.open(logFilePath, FILE_APPEND);
+    //Serial.printf("Logging to %s", logFilePath);
   }
 
+  if (logFile)
+  {
+    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %i\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelRPM, frontRightWheelRPM, rearLeftWheelRPM, rearRightWheelRPM, frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, gasPedalPercentage, brakePedalPercentage, 0))
+    {
+      Serial.println("Logging Failed.");
+    }
+  }
+  else
+  {
+    Serial.printf("Failed to open file");
+    Serial.println();
+  }
 }
 
-void readLSM() {
-  lsm.read();  /* ask it to read in the data */ 
+void readLSM()
+{
+  lsm.read(); /* ask it to read in the data */
 
-  /* Get a new sensor event */ 
-  t = millis()/1000.0;
+  /* Get a new sensor event */
   lsm.getEvent(&a, &m, &g, &temp);
 
   accelerationX = a.acceleration.x;
@@ -276,7 +323,19 @@ void readLSM() {
   gyroscopeRoll = g.gyro.z;
 }
 
-void logSerial() { // Write all values to the console with tabs in between them
+void logSerial()
+{ // Write all values to the console
+
+  char sepChar; // Separation character, either a comma or a tab
+
+  if (serialStudioLogging)
+  {
+    sepChar = ','; // Use comma separated variables for serial studio loggin
+  }
+  else
+  {
+    sepChar = '\n'; // If we are just using the serial monitor, make it look nice using tabs instead
+  }
 
   // Time data
   Serial.print(hourString);
@@ -284,150 +343,230 @@ void logSerial() { // Write all values to the console with tabs in between them
   Serial.print(minuteString);
   Serial.print(":");
   Serial.print(secondString);
-  Serial.print("\t");
-  t = millis()/1000.0;
-  Serial.print(t); // Assuming t is program time in seconds. This can be plotted on the x-axis!
+  Serial.print(sepChar);
+  Serial.print(time_from_start); // Assuming time_from_start is program time in seconds. This can be plotted on the x-axis!
+
+  // Data Screenshot Flag Marker
+  Serial.print(sepChar);
+  Serial.print(dataScreenshotFlag);
+
+  // Battery Data
+  Serial.print(sepChar);
+  Serial.print(batteryVoltage);
+  Serial.print(sepChar);
+  Serial.print(batteryPercentage);
 
   // Accel data
-  Serial.print("\t");
-  Serial.print(a.acceleration.x);  // Accel X
-  Serial.print("\t");
-  Serial.print(a.acceleration.y);  // Accel Y
-  Serial.print("\t");
-  Serial.print(a.acceleration.z);  // Accel Z
+  Serial.print(sepChar);
+  Serial.print(a.acceleration.x); // Accel X
+  Serial.print(sepChar);
+  Serial.print(a.acceleration.y); // Accel Y
+  Serial.print(sepChar);
+  Serial.print(a.acceleration.z); // Accel Z
 
   // Gyro data
-  Serial.print("\t");
-  Serial.print(g.gyro.x);          // Gyro X
-  Serial.print("\t");
-  Serial.print(g.gyro.y);          // Gyro Y
-  Serial.print("\t");
-  Serial.print(g.gyro.z);          // Gyro Z
+  Serial.print(sepChar);
+  Serial.print(g.gyro.x); // Gyro X
+  Serial.print(sepChar);
+  Serial.print(g.gyro.y); // Gyro Y
+  Serial.print(sepChar);
+  Serial.print(g.gyro.z); // Gyro Z
 
   // GPS data
-  Serial.print("\t");
-  Serial.print(gpsLatitude);              // GPS Latitude
-  Serial.print("\t");
-  Serial.print(gpsLatitude);              // GPS Longitude
-  Serial.print("\t");
-  Serial.print(hasFix);                   // GPS Fix
-  Serial.print("\t");
-  Serial.print(sats);                     // GPS Satellites
+  Serial.print(sepChar);
+  Serial.print(gpsLatitude); // GPS Latitude
+  Serial.print(sepChar);
+  Serial.print(gpsLatitude); // GPS Longitude
+  Serial.print(sepChar);
+  Serial.print(hasFix); // GPS Fix
+  Serial.print(sepChar);
+  Serial.print(sats); // GPS Satellites
+
+  // Wheel RPM Data
+  Serial.print(sepChar);
+  Serial.print(frontLeftWheelRPM);
+  Serial.print(sepChar);
+  Serial.print(frontRightWheelRPM);
+  Serial.print(sepChar);
+  Serial.print(rearLeftWheelRPM);
+  Serial.print(sepChar);
+  Serial.print(rearRightWheelRPM);
+
+  // Wheel State Data
+  Serial.print(sepChar);
+  Serial.print(frontLeftWheelState);
+  Serial.print(sepChar);
+  Serial.print(frontRightWheelState);
+  Serial.print(sepChar);
+  Serial.print(rearLeftWheelState);
+  Serial.print(sepChar);
+  Serial.print(rearRightWheelState);
+
+  // Wheel Displacement Data
+  Serial.print(sepChar);
+  Serial.print(frontLeftDisplacement);
+  Serial.print(sepChar);
+  Serial.print(frontRightDisplacement);
+  Serial.print(sepChar);
+  Serial.print(rearLeftDisplacement);
+  Serial.print(sepChar);
+  Serial.print(rearRightDisplacement);
 
   // CVT Data
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(primaryRPM);
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(secondaryRPM);
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(primaryTemperature);
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(secondaryTemperature);
 
   // Pedal Data
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(gasPedalPercentage);
-  Serial.print("\t");
+  Serial.print(sepChar);
   Serial.print(brakePedalPercentage);
+  Serial.print(sepChar);
+  Serial.print(0); // FOR BRAKE PRESSURE
 
   Serial.println(); // Finish with a newline
 }
 
-void updateBatteryPercentage() {
+void updateBatteryPercentage()
+{
 
   int numSamples = 10;
-  
+
   float voltageReadingList[numSamples];
 
   // take 10 readings for averaging
-  for (int i = 0; i < numSamples; i++) {
-   voltageReadingList[i] = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.025 / batVoltageDividerRatio; // multiplied by 1.025 to account for voltage drop
+  for (int i = 0; i < numSamples; i++)
+  {
+    voltageReadingList[i] = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.025 / batVoltageDividerRatio; // multiplied by 1.025 to account for voltage drop
   }
 
   // sum up those 10 readings
   float readingsSum = 0;
-  for (int i = 0; i < numSamples; i++) {
-  readingsSum += voltageReadingList[i];
+  for (int i = 0; i < numSamples; i++)
+  {
+    readingsSum += voltageReadingList[i];
   }
 
   // calculate average
 
-  batteryVoltage = readingsSum/numSamples;
-  
-  if (batteryVoltage >= 12.60) batteryPercentage = 100;
-  else if (batteryVoltage >= 12.54) batteryPercentage = 95;
-  else if (batteryVoltage >= 12.48) batteryPercentage = 90;
-  else if (batteryVoltage >= 12.42) batteryPercentage = 85;
-  else if (batteryVoltage >= 12.36) batteryPercentage = 80;
-  else if (batteryVoltage >= 12.30) batteryPercentage = 75;
-  else if (batteryVoltage >= 12.18) batteryPercentage = 70;
-  else if (batteryVoltage >= 12.06) batteryPercentage = 65;
-  else if (batteryVoltage >= 11.94) batteryPercentage = 60;
-  else if (batteryVoltage >= 11.82) batteryPercentage = 55;
-  else if (batteryVoltage >= 11.70) batteryPercentage = 50;
-  else if (batteryVoltage >= 11.58) batteryPercentage = 45;
-  else if (batteryVoltage >= 11.46) batteryPercentage = 40;
-  else if (batteryVoltage >= 11.34) batteryPercentage = 35;
-  else if (batteryVoltage >= 11.22) batteryPercentage = 30;
-  else if (batteryVoltage >= 11.10) batteryPercentage = 25;
-  else if (batteryVoltage >= 10.98) batteryPercentage = 20;
-  else if (batteryVoltage >= 10.86) batteryPercentage = 15;
-  else if (batteryVoltage >= 10.74) batteryPercentage = 10;
-  else if (batteryVoltage >= 10.62) batteryPercentage = 5;
-  else if (batteryVoltage >= 10.50) batteryPercentage = 0;
-  else batteryPercentage = 0;  // Below 10.5V is over-discharged
-  Serial.println(batteryVoltage);
-  Serial.println(batteryPercentage);
+  batteryVoltage = readingsSum / numSamples;
+
+  if (batteryVoltage >= 12.60)
+    batteryPercentage = 100;
+  else if (batteryVoltage >= 12.54)
+    batteryPercentage = 95;
+  else if (batteryVoltage >= 12.48)
+    batteryPercentage = 90;
+  else if (batteryVoltage >= 12.42)
+    batteryPercentage = 85;
+  else if (batteryVoltage >= 12.36)
+    batteryPercentage = 80;
+  else if (batteryVoltage >= 12.30)
+    batteryPercentage = 75;
+  else if (batteryVoltage >= 12.18)
+    batteryPercentage = 70;
+  else if (batteryVoltage >= 12.06)
+    batteryPercentage = 65;
+  else if (batteryVoltage >= 11.94)
+    batteryPercentage = 60;
+  else if (batteryVoltage >= 11.82)
+    batteryPercentage = 55;
+  else if (batteryVoltage >= 11.70)
+    batteryPercentage = 50;
+  else if (batteryVoltage >= 11.58)
+    batteryPercentage = 45;
+  else if (batteryVoltage >= 11.46)
+    batteryPercentage = 40;
+  else if (batteryVoltage >= 11.34)
+    batteryPercentage = 35;
+  else if (batteryVoltage >= 11.22)
+    batteryPercentage = 30;
+  else if (batteryVoltage >= 11.10)
+    batteryPercentage = 25;
+  else if (batteryVoltage >= 10.98)
+    batteryPercentage = 20;
+  else if (batteryVoltage >= 10.86)
+    batteryPercentage = 15;
+  else if (batteryVoltage >= 10.74)
+    batteryPercentage = 10;
+  else if (batteryVoltage >= 10.62)
+    batteryPercentage = 5;
+  else if (batteryVoltage >= 10.50)
+    batteryPercentage = 0;
+  else
+    batteryPercentage = 0; // Below 10.5V is over-discharged
 }
 
-void readGPS() {
-  while(GPS_Serial.available()) {
+void readGPS()
+{
+  while (GPS_Serial.available())
+  {
     String gpsData = GPS_Serial.readStringUntil('\n');
-    //Serial.print(gpsData);
+    // Serial.print(gpsData);
     parseGPGGA(gpsData);
   }
 }
 
-void setNextAvailableFilePath() {
-  if (gpsDateDay > 0 && gpsDateDay <= 31) {
+void setNextAvailableFilePath()
+{
+
+  // Check to see if we have a fix for the date. If so, set the log path to the date/time
+  if (gpsDateDay > 0 && gpsDateDay <= 31)
+  {
     logFilePathDescriptive = "/" + yearString + "-" + monthString + "-" + dayString + "_" + hourString + "-" + minuteString + "-" + secondString + ".csv";
-  } else {
+  }
+
+  // If we could not get a date and time, just create a generic log file name (e.g "log4")
+  else
+  {
+
     int fileNumber = 0;
     bool fileExists = true;
 
-    while (fileExists) {
-        // Generate the next file name in the sequence
-        snprintf(logFilePath, sizeof(logFilePath), "/log%d.csv", fileNumber);
-        
-        // Check if the file exists on the SD card
-        fileExists = SD.exists(logFilePath);
+    while (fileExists)
+    {
+      // Generate the next file name in the sequence
+      snprintf(logFilePath, sizeof(logFilePath), "/log%d.csv", fileNumber);
 
-        // If the file exists, increment the file number and check again
-        if (fileExists) {
-            fileNumber++;
-        }
+      // Check if the file exists on the SD card
+      fileExists = SD.exists(logFilePath);
+
+      // If the file exists, increment the file number and check again
+      if (fileExists)
+      {
+        fileNumber++;
+      }
     }
   }
 }
 
-//Function to convert string NMEA data from GPS into usable decimal degrees format
-String convertToDecimalDegrees(const String& coordinate, bool isLatitude) {
-    int degreesLength = isLatitude ? 2 : 3; // Determine the number of degrees (DD or DDD)
+// Function to convert string NMEA data from GPS into usable decimal degrees format
+String convertToDecimalDegrees(const String &coordinate, bool isLatitude)
+{
+  int degreesLength = isLatitude ? 2 : 3; // Determine the number of degrees (DD or DDD)
 
-    // Extract degrees and minutes from the string
-    double degrees = coordinate.substring(0, degreesLength).toDouble();
-    double minutes = coordinate.substring(degreesLength).toDouble();
+  // Extract degrees and minutes from the string
+  double degrees = coordinate.substring(0, degreesLength).toDouble();
+  double minutes = coordinate.substring(degreesLength).toDouble();
 
-    // Convert to decimal degrees
-    double decimalDegrees = degrees + (minutes / 60.0);
+  // Convert to decimal degrees
+  double decimalDegrees = degrees + (minutes / 60.0);
 
-    // Convert decimal degrees to string
-    return String(decimalDegrees, 6); // 6 decimal places
+  // Convert decimal degrees to string
+  return String(decimalDegrees, 6); // 6 decimal places
 }
 
 // Take the raw gps data and convert - $GPZDA 'Date & Time'
-void parseGPZDA(String data) {
-  if (data.startsWith("$GPZDA")) {
+void parseGPZDA(String data)
+{
+  if (data.startsWith("$GPZDA"))
+  {
     // Split the data using commas
     int maxFields = 15; // $GPZDA has a maximum of 7 fields
     String fields[maxFields];
@@ -435,47 +574,61 @@ void parseGPZDA(String data) {
 
     int start = 0;
     int pos = data.indexOf(',');
-    while (pos != -1 && fieldCount < maxFields) {
+    while (pos != -1 && fieldCount < maxFields)
+    {
       fields[fieldCount] = data.substring(start, pos);
       fieldCount++;
 
       start = pos + 1;
       pos = data.indexOf(',', start);
     }
-    if (start < data.length() && fieldCount < maxFields) {
+    if (start < data.length() && fieldCount < maxFields)
+    {
       fields[fieldCount++] = data.substring(start);
     }
 
     // UTC hhmmss.ss - not used
 
     // Day
-    if (fieldCount > 0 && fields[2].length() > 0) {
+    if (fieldCount > 0 && fields[2].length() > 0)
+    {
       dayString = fields[2];
-    } else {
+    }
+    else
+    {
       dayString = "0";
     }
     gpsDateDay = dayString.toInt();
 
     // Month
-    if (fieldCount > 0 && fields[3].length() > 0) {
+    if (fieldCount > 0 && fields[3].length() > 0)
+    {
       monthString = fields[3];
-    } else {
+    }
+    else
+    {
       monthString = "0";
     }
     gpsDateMonth = monthString.toInt();
 
     // Year
-    if (fieldCount > 0 && fields[4].length() > 0) {
+    if (fieldCount > 0 && fields[4].length() > 0)
+    {
       yearString = fields[4];
-    } else {
+    }
+    else
+    {
       yearString = "0";
     }
     gpsDateYear = yearString.toInt();
 
     // Time zone offset
-    if (fieldCount > 0 && fields[5].length() > 0) {
+    if (fieldCount > 0 && fields[5].length() > 0)
+    {
       timeZoneOffsetString = fields[5];
-    } else {
+    }
+    else
+    {
       timeZoneOffsetString = "-99";
     }
     timeZoneOffset = timeZoneOffsetString.toInt();
