@@ -109,7 +109,7 @@ void setup()
   pinMode(batteryPin, INPUT);
 
   // start serial and wait for it to connect
-  Serial.begin(115200);
+  Serial.begin(460800);
   while (!Serial)
   {
     delay(1);
