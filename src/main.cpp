@@ -338,6 +338,7 @@ void logSerial()
     sepChar = '\n'; // If we are just using the serial monitor, make it look nice using tabs instead
   }
 
+  
   // Time data
   Serial.print(hourString);
   Serial.print(sepChar);
@@ -377,11 +378,27 @@ void logSerial()
   Serial.print(sepChar);
   Serial.print(gpsLatitude); // GPS Latitude
   Serial.print(sepChar);
-  Serial.print(gpsLatitude); // GPS Longitude
+  Serial.print(gpsLongitude); // GPS Longitude
   Serial.print(sepChar);
   Serial.print(hasFix); // GPS Fix
   Serial.print(sepChar);
   Serial.print(sats); // GPS Satellites
+  Serial.print(sepChar);
+  Serial.print(gpsAltitude); // GPS Altitude
+  Serial.print(sepChar);
+  Serial.print(gpsHeading); // GPS Heading
+  Serial.print(sepChar);
+  Serial.print(gpsVelocity); // GPS Velocity
+
+  // CVT Data
+  Serial.print(sepChar);
+  Serial.print(primaryRPM);
+  Serial.print(sepChar);
+  Serial.print(secondaryRPM);
+  Serial.print(sepChar);
+  Serial.print(primaryTemperature);
+  Serial.print(sepChar);
+  Serial.print(secondaryTemperature);
 
   // Wheel RPM Data
   Serial.print(sepChar);
@@ -413,16 +430,6 @@ void logSerial()
   Serial.print(sepChar);
   Serial.print(rearRightDisplacement);
 
-  // CVT Data
-  Serial.print(sepChar);
-  Serial.print(primaryRPM);
-  Serial.print(sepChar);
-  Serial.print(secondaryRPM);
-  Serial.print(sepChar);
-  Serial.print(primaryTemperature);
-  Serial.print(sepChar);
-  Serial.print(secondaryTemperature);
-
   // Pedal Data
   Serial.print(sepChar);
   Serial.print(gasPedalPercentage);
@@ -430,6 +437,7 @@ void logSerial()
   Serial.print(brakePedalPercentage);
   Serial.print(sepChar);
   Serial.print(0); // FOR BRAKE PRESSURE
+
 
   Serial.println(); // Finish with a newline
 }
