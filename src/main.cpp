@@ -376,9 +376,9 @@ void logSerial()
 
   // GPS data
   Serial.print(sepChar);
-  Serial.print(gpsLatitude); // GPS Latitude
+  Serial.print(gpsLatitude, 6); // GPS Latitude (with 6 decimal places)
   Serial.print(sepChar);
-  Serial.print(gpsLongitude); // GPS Longitude
+  Serial.print(gpsLongitude, 6); // GPS Longitude (with 6 decimal places)
   Serial.print(sepChar);
   Serial.print(hasFix); // GPS Fix
   Serial.print(sepChar);
