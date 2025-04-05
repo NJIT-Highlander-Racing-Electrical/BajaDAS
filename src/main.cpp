@@ -29,7 +29,11 @@ String secondString = "";
 
 String dateString = "";
 String dayString = "";
+String monthString = "";
 String yearString = "";
+
+String timeZoneOffsetString = "-99";
+int timeZoneOffset = -99;
 
 // buttons & switches
 const int buttonPin1 = 35;
@@ -69,6 +73,7 @@ sensors_event_t a, m, g, temp;
 
 // log file setup
 File logFile;
+String logFilePathDescriptive = "/yyyy-mm-dd_hh-mm-ss.csv";
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
 
 // function declarations here:
@@ -80,8 +85,9 @@ void readLSM();
 void updateBatteryPercentage();
 void readGPS();
 
+void parseGPZDA(String data);
 void parseGPGGA(String data);
-void parseGPRMC(String data);
+// void parseGPRMC(String data);
 String convertToDecimalDegrees(const String& coordinate, bool isLatitude);
 
 void logSerial();
@@ -104,9 +110,9 @@ void setup() {
   }
 
   // setup connections to various modules
+  setupGPS();
   setupSD();
   setupLSM();
-  setupGPS();
 
   // setup CAN
   setupCAN(DAS);
@@ -197,10 +203,16 @@ void setupSD()
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 
   setNextAvailableFilePath();
-  logFile = SD.open(logFilePath, FILE_APPEND);
+  if (gpsDateDay > 0 && gpsDateDay <= 31) {
+    logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
+    Serial.printf("Logging to %s", logFilePathDescriptive);
+  } else {
+    logFile = SD.open(logFilePath, FILE_APPEND);
+    Serial.printf("Logging to %s", logFilePath);
+  }
+  
   if (logFile) {
     dasError = false;
-    Serial.printf("Logging to %s", logFilePath);
     Serial.println();
     if(!logFile.println("Hour, Minute, Second, tfs, mode, daqmode, ax, ay, az, gx, gy, gz, lat, lon, fix, sats, 1rpm, 2rpm, temp, gpd, bpd, wheelspeed1"))
     {
@@ -210,7 +222,7 @@ void setupSD()
   }
   // if the file didn't open, print an error:
   else {
-    Serial.printf("Failed to open %s", logFilePath);
+    Serial.printf("Failed to open file");
     Serial.println();
     dasError = true;
   }
@@ -226,8 +238,14 @@ void setupGPS() {
 }
 
 void logSD() { // logging switch is being moved to dashboard, logging on/off will come over CAN
-  if (true) {
-    logFile = SD.open(logFilePath, FILE_APPEND);
+  if (sdLoggingActive == true) {
+    if (gpsDateDay > 0 && gpsDateDay <= 31) {
+      logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
+      Serial.printf("Loggind to %s", logFilePathDescriptive);
+    } else {
+      logFile = SD.open(logFilePath, FILE_APPEND);
+      Serial.printf("Logging to %s", logFilePath);
+    }
     if (logFile) {
       if(!logFile.printf("%s, %s, %s, %f, %s, %s, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i\n", hourString, minuteString, secondString, t, "placeholder", "placeholder", a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, gasPedalPercentage, brakePedalPercentage, frontRightWheelRPM, frontLeftWheelRPM, rearRightWheelRPM, rearLeftWheelRPM))
       {
@@ -235,7 +253,7 @@ void logSD() { // logging switch is being moved to dashboard, logging on/off wil
       }
     }
     else {
-      Serial.printf("Failed to open %s", logFilePath);
+      Serial.printf("Failed to open file");
       Serial.println();
     }
   }
@@ -371,6 +389,9 @@ void readGPS() {
 }
 
 void setNextAvailableFilePath() {
+  if (gpsDateDay > 0 && gpsDateDay <= 31) {
+    logFilePathDescriptive = "/" + yearString + "-" + monthString + "-" + dayString + "_" + hourString + "-" + minuteString + "-" + secondString + ".csv";
+  } else {
     int fileNumber = 0;
     bool fileExists = true;
 
@@ -386,6 +407,7 @@ void setNextAvailableFilePath() {
             fileNumber++;
         }
     }
+  }
 }
 
 //Function to convert string NMEA data from GPS into usable decimal degrees format
@@ -403,7 +425,64 @@ String convertToDecimalDegrees(const String& coordinate, bool isLatitude) {
     return String(decimalDegrees, 6); // 6 decimal places
 }
 
-// Take the raw gps data and convert - $GPGGA
+// Take the raw gps data and convert - $GPZDA 'Date & Time'
+void parseGPZDA(String data) {
+  if (data.startsWith("$GPZDA")) {
+    // Split the data using commas
+    int maxFields = 15; // $GPZDA has a maximum of 7 fields
+    String fields[maxFields];
+    int fieldCount = 0;
+
+    int start = 0;
+    int pos = data.indexOf(',');
+    while (pos != -1 && fieldCount < maxFields) {
+      fields[fieldCount] = data.substring(start, pos);
+      fieldCount++;
+
+      start = pos + 1;
+      pos = data.indexOf(',', start);
+    }
+    if (start < data.length() && fieldCount < maxFields) {
+      fields[fieldCount++] = data.substring(start);
+    }
+
+    // UTC hhmmss.ss - not used
+
+    // Day
+    if (fieldCount > 0 && fields[2].length() > 0) {
+      dayString = fields[2];
+    } else {
+      dayString = "0";
+    }
+    gpsDateDay = dayString.toInt();
+
+    // Month
+    if (fieldCount > 0 && fields[3].length() > 0) {
+      monthString = fields[3];
+    } else {
+      monthString = "0";
+    }
+    gpsDateMonth = monthString.toInt();
+
+    // Year
+    if (fieldCount > 0 && fields[4].length() > 0) {
+      yearString = fields[4];
+    } else {
+      yearString = "0";
+    }
+    gpsDateYear = yearString.toInt();
+
+    // Time zone offset
+    if (fieldCount > 0 && fields[5].length() > 0) {
+      timeZoneOffsetString = fields[5];
+    } else {
+      timeZoneOffsetString = "-99";
+    }
+    timeZoneOffset = timeZoneOffsetString.toInt();
+  }
+}
+
+// Take the raw gps data and convert - $GPGGA 'Global Positioning System Fix Data'
 void parseGPGGA(String data) {
   if (data.startsWith("$GPGGA")) {
     // Split the data using commas
@@ -489,6 +568,7 @@ void parseGPGGA(String data) {
 }
 
 // Take the raw gps data and convert - $GPRMC
+/*
 void parseGPRMC(String data) {
   if (data.startsWith("$GPRMC")) {
     // Split the data using commas
@@ -580,3 +660,4 @@ void parseGPRMC(String data) {
     }
   }
 }
+*/
