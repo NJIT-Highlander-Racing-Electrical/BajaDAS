@@ -4,11 +4,9 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## DAS To-Do
 
-* Add a variable that can easily change the time zone based on GMT (e.g. Marana, AZ is GMT-7 so be able to pass in -7)
 * Update CAN Driver AND line of logSD that saves the brake pressure AND line of logSerial (once we have the sensor installed) -- currently it is hard coded to just save zero
-* Configure DAS Serial Output to be easily parseable by Serial Studio (for wired connections)
-    * This can just be comma separated variables with a newline character at the end of the data string, everything else is parsed and processed inside of SerialStudio
-    * The SerialStudio visual application will look very similar to the LoRa dashboard, but because the LoRa dashboard limits the data it sends for bandwith purposes, this DAS dashboard in SerialStudio will be more extensive.
+* Add code to get velocity, heading, and altitude (make sure velocity is converted to mph)
+* The SerialStudio visual application will look very similar to the LoRa dashboard, but because the LoRa dashboard limits the data it sends for bandwith purposes, this DAS dashboard in SerialStudio will be more extensive.
 * Ensure "zeroing" accelerometer and correcting the readings for mounting offsets is working properly.
 * Ensure numbers are not getting shifted or having other erroneous digits in SD logging.
 * Make sure DAS is operating at 10Hz poll rate
