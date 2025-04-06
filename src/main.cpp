@@ -109,7 +109,7 @@ void setup()
   pinMode(batteryPin, INPUT);
 
   // start serial and wait for it to connect
-  Serial.begin(460800);
+  Serial.begin(115200);
   while (!Serial)
   {
     delay(1);
@@ -234,13 +234,32 @@ void setupSD()
 
 void setupGPS()
 {
-  Serial.print("Initializing GPS... ");
+  Serial.println("Initializing GPS on Serial2 at 9600 bps"); // Initialize first to 9600 because this is the default for the module
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
+
   while (!GPS_Serial)
   {
     delay(1);
   }
+
   Serial.println("Found GPS");
+
+   // Send the command to change the baud rate to 57600 (for 10Hz polling)
+   GPS_Serial.println("$PMTK251,57600*2C");
+   delay(1000);  // Wait for the GPS module to process the command
+
+
+  // Now, reinitialize GPS_Serial with 57600 baud rate
+  GPS_Serial.end();  // End the current serial connection
+  GPS_Serial.begin(57600, SERIAL_8N1, 16, 17);  // Reinitialize at 57600 baud rate
+  Serial.println("GPS baud rate set to 57600");
+
+  // Set GPS update rate to 10Hz (100ms)
+  GPS_Serial.println("$PMTK220,100*2F");  // Set 10Hz polling rate
+  delay(100);  // Wait for the GPS module to process the command
+  
+ 
+  
 }
 
 // Runs once whenever a log file is started from dashboard button
