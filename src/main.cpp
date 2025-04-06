@@ -286,7 +286,7 @@ void createFileSD()
     Serial.println();
 
     // Print headers to CSV
-    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude, heading, velocity, primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelrpm, fr_wheelrpm, rl_wheelrpm, rr_wheelrpm, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos gas_angle, brake_angle, brake_pressure"))
+    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelrpm, fr_wheelrpm, rl_wheelrpm, rr_wheelrpm, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos gas_pos, brake_pos, brake_pressure"))
     {
       Serial.println("Logging Failed.");
     }
@@ -750,6 +750,7 @@ void parseGPGGA(String data) {
 // Extract altitude if available
 if (fieldCount > 9 && fields[9].length() > 0) {
   gpsAltitude = fields[9].toFloat();  // Altitude in meters
+  gpsAltitude *= 3.28084; // convert to feet
 } else {
   gpsAltitude = -1;  // Default or error value
 }
