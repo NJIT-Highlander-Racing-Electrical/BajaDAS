@@ -73,7 +73,7 @@ sensors_event_t a, m, g, temp;
 
 // log file setup
 File logFile;
-bool fileCreated = false; // This variable is used to know if we are creating a new file, or just simply logging (in the main loop)
+bool fileCreated = false;           // This variable is used to know if we are creating a new file, or just simply logging (in the main loop)
 bool filenameIsDescriptive = false; // So we know what type of file we made. We don't want the conditions to change mid-logging and our files to get corrupted
 String logFilePathDescriptive = "/yyyy-mm-dd_hh-mm-ss.csv";
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
@@ -89,8 +89,8 @@ void readGPS();
 
 void parseGPZDA(String data);
 void parseGPGGA(String data);
-void parseGPVTG(String data);
-// void parseGPRMC(String data);
+//void parseGPVTG(String data);
+void parseGPRMC(String data);
 String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
 
 void logSerial();
@@ -108,12 +108,8 @@ void setup()
   pinMode(switchPin, INPUT_PULLUP);
   pinMode(batteryPin, INPUT);
 
-  // start serial and wait for it to connect
+  // start serial
   Serial.begin(115200);
-  while (!Serial)
-  {
-    delay(1);
-  }
 
   // setup connections to various modules
   setupGPS();
@@ -175,8 +171,8 @@ void setupLSM()
   Serial.println("Found LSM9DS1 9DOF");
 
   // 1.) Set the accelerometer range
-  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
-  // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
+   lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
 
@@ -233,11 +229,10 @@ void setupSD()
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 }
 
-
 void setupGPS()
 {
   Serial.println("Initializing GPS on Serial2 at 9600 bps"); // Initialize first to 9600 because this is the default for the module
-  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // RX2, TX2
+  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17);                // RX2, TX2
 
   while (!GPS_Serial)
   {
@@ -246,22 +241,21 @@ void setupGPS()
 
   Serial.println("Found GPS");
 
-   // Send the command to change the baud rate to 57600 (for 10Hz polling)
-   GPS_Serial.println("$PMTK251,57600*2C");
-   delay(1000);  // Wait for the GPS module to process the command
-
+  // Send the command to change the baud rate to 57600 (for 10Hz polling)
+  GPS_Serial.println("$PMTK251,57600*2C");
+  delay(1000); // Wait for the GPS module to process the command
 
   // Now, reinitialize GPS_Serial with 57600 baud rate
-  GPS_Serial.end();  // End the current serial connection
-  GPS_Serial.begin(57600, SERIAL_8N1, 16, 17);  // Reinitialize at 57600 baud rate
+  GPS_Serial.end();                            // End the current serial connection
+  GPS_Serial.begin(57600, SERIAL_8N1, 16, 17); // Reinitialize at 57600 baud rate
   Serial.println("GPS baud rate set to 57600");
 
   // Set GPS update rate to 10Hz (100ms)
-  GPS_Serial.println("$PMTK220,100*2F");  // Set 10Hz polling rate
-  delay(100);  // Wait for the GPS module to process the command
-  
- 
-  
+  GPS_Serial.println("$PMTK220,100*2F"); // Set 10Hz polling rate
+  delay(100);                            // Wait for the GPS module to process the command
+
+  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // Enable GGA (field 2) and VTG (field 4)
+  delay(100);                                                              // Delay again just for a little bit
 }
 
 // Runs once whenever a log file is started from dashboard button
@@ -308,12 +302,12 @@ void logSD()
   if (filenameIsDescriptive) // Case for if we have a date/time fix
   {
     logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
-    //Serial.printf("Loggind to %s", logFilePathDescriptive);
+    // Serial.printf("Loggind to %s", logFilePathDescriptive);
   }
   else // Case for if we are using non-descriptive file (e.g. "log4")
   {
     logFile = SD.open(logFilePath, FILE_APPEND);
-    //Serial.printf("Logging to %s", logFilePath);
+    // Serial.printf("Logging to %s", logFilePath);
   }
 
   if (logFile)
@@ -360,7 +354,6 @@ void logSerial()
     sepChar = '\n'; // If we are just using the serial monitor, make it look nice using tabs instead
   }
 
-  
   // Time data
   Serial.print(hourString);
   Serial.print(sepChar);
@@ -460,8 +453,6 @@ void logSerial()
   Serial.print(sepChar);
   Serial.print(gasPedalPercentage);
 
-
-
   Serial.println(); // Finish with a newline
 }
 
@@ -535,15 +526,21 @@ void updateBatteryPercentage()
     batteryPercentage = 0; // Below 10.5V is over-discharged
 }
 
-void readGPS()
-{
-  while (GPS_Serial.available())
-  {
+void readGPS() {
+  while (GPS_Serial.available()) {
     String gpsData = GPS_Serial.readStringUntil('\n');
-    // Serial.print(gpsData);
-    parseGPGGA(gpsData);
+    gpsData.trim();
+
+    if (gpsData.startsWith("$GPGGA")) {
+      parseGPGGA(gpsData);
+    } else if (gpsData.startsWith("$GPRMC")) {
+      parseGPRMC(gpsData);
+    }
+
+    // Serial.println(gpsData);  // Optional debug output
   }
 }
+
 
 void setNextAvailableFilePath()
 {
@@ -668,71 +665,89 @@ void parseGPZDA(String data)
 }
 
 // Take the raw gps data and convert - $GPGGA 'Global Positioning System Fix Data'
-void parseGPGGA(String data) {
-  if (data.startsWith("$GPGGA")) {
+void parseGPGGA(String data)
+{
+  if (data.startsWith("$GPGGA"))
+  {
     // Split the data using commas
-    int maxFields = 15;  // GPGGA has a maximum of 15 fields
+    int maxFields = 15; // GPGGA has a maximum of 15 fields
     String fields[maxFields];
     int fieldCount = 0;
-    
+
     int start = 0;
     int pos = data.indexOf(',');
-    while (pos != -1 && fieldCount < maxFields) {
+    while (pos != -1 && fieldCount < maxFields)
+    {
       fields[fieldCount] = data.substring(start, pos);
       fieldCount++;
-      
+
       start = pos + 1;
       pos = data.indexOf(',', start);
     }
-    if (start < data.length() && fieldCount < maxFields) {
+    if (start < data.length() && fieldCount < maxFields)
+    {
       fields[fieldCount++] = data.substring(start);
     }
 
     // Extract time information if available
-    if (fieldCount > 0 && fields[1].length() > 0) {
+    if (fieldCount > 0 && fields[1].length() > 0)
+    {
       timedat = fields[1];
-    } else {
+    }
+    else
+    {
       timedat = "err";
     }
 
-    hourString = timedat.substring(0,2); 
+    hourString = timedat.substring(0, 2);
 
     int hours = hourString.toInt(); // Convert the string to an integer
     hours -= 4;
     // Handle cases where the offset causes the hour to go negative
-    if (hours < 0) {
+    if (hours < 0)
+    {
       hours += 24; // Wrap around to previous day
     }
 
-    if (hours == 0) {
+    if (hours == 0)
+    {
       gpsTimeHour = 12; // Midnight
-    } else if (hours > 12) {
+    }
+    else if (hours > 12)
+    {
       gpsTimeHour = hours - 12; // Afternoon/evening
-    } else {
+    }
+    else
+    {
       gpsTimeHour = hours; // Morning
     }
 
     hourString = String(gpsTimeHour);
-     if (gpsTimeHour < 10) {
+    if (gpsTimeHour < 10)
+    {
       hourString = "0" + hourString;
     }
 
-    minuteString = timedat.substring(2,4);
+    minuteString = timedat.substring(2, 4);
     gpsTimeMinute = minuteString.toInt();
-    secondString = timedat.substring(4,6);
+    secondString = timedat.substring(4, 6);
     gpsTimeSecond = secondString.toInt();
 
     // Extract latitude and longitude if available
-    if (fieldCount > 4 && fields[2].length() > 0 && fields[4].length() > 0) {
+    if (fieldCount > 4 && fields[2].length() > 0 && fields[4].length() > 0)
+    {
       latitude = fields[2];
       longitude = fields[4];
-    } else {
+    }
+    else
+    {
       latitude = "";
       longitude = "";
     }
 
     // Convert latitude and longitude NMEA strings into decimal degrees strings (for Google Maps, GPS Visualizer, etc)
-    if (latitude.length() > 0 && longitude.length() > 0) {
+    if (latitude.length() > 0 && longitude.length() > 0)
+    {
       // Convert NMEA coordinates to decimal degrees strings
       latitudeDecimal = convertToDecimalDegrees(latitude, 1);
       gpsLatitude = latitudeDecimal.toFloat();
@@ -741,40 +756,40 @@ void parseGPGGA(String data) {
     }
 
     // Extract fix status and satellite count
-    if (fieldCount > 6) {
+    if (fieldCount > 6)
+    {
       int fix = fields[6].toInt();
       hasFix = (fix > 0);
       sats = fields[7].toInt();
-    } else {
+    }
+    else
+    {
       hasFix = false;
       sats = 0;
     }
 
-// Extract altitude if available
-if (fieldCount > 9 && fields[9].length() > 0) {
-  gpsAltitude = fields[9].toFloat();  // Altitude in meters
-  gpsAltitude *= 3.28084; // convert to feet
-} else {
-  gpsAltitude = -1;  // Default or error value
-}
-
-
+    // Extract altitude if available
+    if (fieldCount > 9 && fields[9].length() > 0)
+    {
+      gpsAltitude = fields[9].toFloat(); // Altitude in meters
+      gpsAltitude *= 3.28084;            // convert to feet
+    }
+    else
+    {
+      gpsAltitude = -1; // Default or error value
+    }
   }
 }
-
-void parseGPVTG(String data) {
-  if (data.startsWith("$GPVTG")) {
-    // Split the data using commas
-    int maxFields = 10;  // GPVTG has a maximum of 10 fields
+void parseGPRMC(String data) {
+  if (data.startsWith("$GPRMC")) {
+    int maxFields = 12;
     String fields[maxFields];
     int fieldCount = 0;
 
     int start = 0;
     int pos = data.indexOf(',');
     while (pos != -1 && fieldCount < maxFields) {
-      fields[fieldCount] = data.substring(start, pos);
-      fieldCount++;
-
+      fields[fieldCount++] = data.substring(start, pos);
       start = pos + 1;
       pos = data.indexOf(',', start);
     }
@@ -782,24 +797,19 @@ void parseGPVTG(String data) {
       fields[fieldCount++] = data.substring(start);
     }
 
-    // Extract heading (course over ground) and velocity (in knots)
-    if (fieldCount > 1 && fields[1].length() > 0) {
-      gpsHeading = fields[1].toFloat();  // Heading in degrees
+    // Speed in knots (field 7), convert to MPH
+    if (fieldCount > 7 && fields[7].length() > 0) {
+      float speedKnots = fields[7].toFloat();
+      gpsVelocity = speedKnots * 1.15078;  // MPH
     } else {
-      gpsHeading = -1;  // Default or error value
+      gpsVelocity = -1;
     }
 
-    // Extract velocity (speed over ground) in knots
-    if (fieldCount > 5 && fields[5].length() > 0) {
-      gpsVelocity = fields[5].toFloat();  // Velocity in knots
+    // Heading in degrees (field 8)
+    if (fieldCount > 8 && fields[8].length() > 0) {
+      gpsHeading = fields[8].toFloat();
     } else {
-      gpsVelocity = -1;  // Default or error value
+      gpsHeading = -1;
     }
-
-    // Convert velocity to miles per hour (1 knot = 1.15078 MPH)
-    gpsVelocity *= 1.15078;
-
-    
   }
 }
-
