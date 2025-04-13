@@ -811,5 +811,17 @@ void parseGPRMC(String data) {
     } else {
       gpsHeading = -1;
     }
+
+    // Date: DDMMYY (field 9)
+    if (fieldCount > 9 && fields[9].length() == 6) {
+      String dd = fields[9].substring(0, 2);
+      String mm = fields[9].substring(2, 4);
+      String yy = fields[9].substring(4, 6);
+      gpsDateDay = dd.toInt();
+      gpsDateMonth = mm.toInt();
+      gpsDateYear = 2000 + yy.toInt();  // Convert to 4-digit year
+    } else {
+      gpsDateDay = gpsDateMonth = gpsDateYear = -1;
+    }
   }
 }
