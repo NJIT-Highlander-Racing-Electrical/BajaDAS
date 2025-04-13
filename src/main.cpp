@@ -25,7 +25,6 @@ String hourString = "";
 String minuteString = "";
 String secondString = "";
 
-String dateString = "";
 String dayString = "";
 String monthString = "";
 String yearString = "";
@@ -814,10 +813,10 @@ void parseGPRMC(String data) {
 
     // Date: DDMMYY (field 9)
     if (fieldCount > 9 && fields[9].length() == 6) {
-      dateString = fields[9].substring(0, 2);
+      dayString = fields[9].substring(0, 2);
       monthString = fields[9].substring(2, 4);
       yearString = "20" + fields[9].substring(4, 6);
-      gpsDateDay = dateString.toInt();
+      gpsDateDay = dayString.toInt();
       gpsDateMonth = monthString.toInt();
       gpsDateYear = 2000 + yearString.toInt();  // Convert to 4-digit year
     } else {
