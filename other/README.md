@@ -4,15 +4,8 @@ BajaDAS is a data acquisition system tailored for the Highlander Racing team's v
 
 ## DAS To-Do
 
-* Update CAN Driver AND line of logSD that saves the brake pressure AND line of logSerial (once we have the sensor installed) -- currently it is hard coded to just save zero
 * Ensure "zeroing" accelerometer and correcting the readings for mounting offsets is working properly.
 * Ensure numbers are not getting shifted or having other erroneous digits in SD logging.
-* Ensure DAS is ONLY receiving "SD Logging Active" bit from dashbaord
-     * Ensure that transition from inactive to active creates a new file
-         * If GPS has a fix, update file metadata to include correct time
-         * Can also generate the name based off of time/date
-         * If GPS does not have a fix, just create a log name (e.g. log3)
-     * Ensure that transition from active to inactive saves the data file
 
 
 ## 2025-2026 Changes to Make
