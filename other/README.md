@@ -2,12 +2,6 @@
 
 BajaDAS is a data acquisition system tailored for the Highlander Racing team's vehicles. It gathers real-time telemetry data, crucial for performance analytics and diagnostics.
 
-## DAS To-Do
-
-* Ensure "zeroing" accelerometer and correcting the readings for mounting offsets is working properly.
-* Ensure numbers are not getting shifted or having other erroneous digits in SD logging.
-
-
 ## 2025-2026 Changes to Make
 
 * Incorporate this [Adafruit Panel Mount Micro SD Card Extender](https://www.google.com/aclk?sa=l&ai=DChcSEwjj9bOK6cmKAxXBVEcBHVRjHN4YABASGgJxdQ&ae=2&aspm=1&co=1&ase=5&gclid=Cj0KCQiAvbm7BhC5ARIsAFjwNHsn8yJzOILmMZRqH4E_HPufaiggZcexFWYqg4a0y1KrF-u19AfAwZwaAi_wEALw_wcB&sig=AOD64_018L6tCDBYVmc7ekdmUu69rXhYmw&ctype=5&q=&ved=2ahUKEwjsy62K6cmKAxUiFFkFHVE7BFwQww8oAnoECAYQDA&adurl=) for easier use. This will require a waterproof screw on or press fit cover but will make removing the microSD far easier
