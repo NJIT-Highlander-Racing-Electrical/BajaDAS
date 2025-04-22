@@ -109,6 +109,7 @@ void setup()
 
   // start serial
   Serial.begin(115200);
+  while(!Serial); // Wait for serial to initialize, otherwise serial might not work properly
 
   // setup connections to various modules
   setupGPS();
