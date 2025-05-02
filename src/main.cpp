@@ -546,8 +546,9 @@ void setNextAvailableFilePath()
 {
 
   // Check to see if we have a fix for the date. If so, set the log path to the date/time
-  if (gpsDateDay > 0 && gpsDateDay <= 31)
+  if (gpsDateDay > 0 && gpsDateDay <= 31 && gpsDateYear != 2080)
   {
+    // If the year is 2080, we appended 2000 to the default 1980 and we should ignore the descriptive file path
     logFilePathDescriptive = "/" + yearString + "-" + monthString + "-" + dayString + "_" + hourString + "-" + minuteString + "-" + secondString + ".csv";
   }
 
