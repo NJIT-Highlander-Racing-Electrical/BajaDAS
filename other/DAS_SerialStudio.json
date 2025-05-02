@@ -357,7 +357,7 @@
                     "max": 1000,
                     "min": 0,
                     "title": "Front Left Wheel Speed",
-                    "units": "RPM",
+                    "units": "MPH",
                     "value": "--.--",
                     "widget": "bar"
                 },
@@ -374,7 +374,7 @@
                     "max": 1000,
                     "min": 0,
                     "title": "Front Right Wheel Speed",
-                    "units": "RPM",
+                    "units": "MPH",
                     "value": "--.--",
                     "widget": "bar"
                 },
@@ -391,7 +391,7 @@
                     "max": 1000,
                     "min": 0,
                     "title": "Rear Left Wheel Speed",
-                    "units": "RPM",
+                    "units": "MPH",
                     "value": "--.--",
                     "widget": "bar"
                 },
@@ -408,7 +408,7 @@
                     "max": 1000,
                     "min": 0,
                     "title": "Rear Right Wheel Speed",
-                    "units": "RPM",
+                    "units": "MPH",
                     "value": "--.--",
                     "widget": "bar"
                 }
@@ -682,18 +682,6 @@
                 }
             ],
             "title": "Accelerometer",
-            "widget": "multiplot"
-        },
-        {
-            "datasets": [
-            ],
-            "title": "Accelerometer Container",
-            "widget": ""
-        },
-        {
-            "datasets": [
-            ],
-            "title": "Multiple Plot",
             "widget": "multiplot"
         }
     ],
