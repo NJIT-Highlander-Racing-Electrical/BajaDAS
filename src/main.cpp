@@ -282,7 +282,7 @@ void createFileSD()
     Serial.println();
 
     // Print headers to CSV
-    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelrpm, fr_wheelrpm, rl_wheelrpm, rr_wheelrpm, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos"))
+    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelspeed, fr_wheelspeed, rl_wheelspeed, rr_wheelspeed, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos"))
     {
       Serial.println("Logging Failed.");
     }
@@ -312,7 +312,7 @@ void logSD()
 
   if (logFile)
   {
-    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %i, %i, %f\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelRPM, frontRightWheelRPM, rearLeftWheelRPM, rearRightWheelRPM, frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, frontBrakePressure, rearBrakePressure, gasPedalPercentage))
+    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %i, %i, %i, %i, %f, %f, %f, %f, %i, %i, %f\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, frontBrakePressure, rearBrakePressure, gasPedalPercentage))
     {
       Serial.println("Logging Failed.");
     }
@@ -417,13 +417,13 @@ void logSerial()
 
   // Wheel RPM Data
   Serial.print(sepChar);
-  Serial.print(frontLeftWheelRPM);
+  Serial.print(frontLeftWheelSpeed);
   Serial.print(sepChar);
-  Serial.print(frontRightWheelRPM);
+  Serial.print(frontRightWheelSpeed);
   Serial.print(sepChar);
-  Serial.print(rearLeftWheelRPM);
+  Serial.print(rearLeftWheelSpeed);
   Serial.print(sepChar);
-  Serial.print(rearRightWheelRPM);
+  Serial.print(rearRightWheelSpeed);
 
   // Wheel State Data
   Serial.print(sepChar);
