@@ -29,9 +29,7 @@ String dayString = "";
 String monthString = "";
 String yearString = "";
 
-// Gets time zone from GPS data string for calculating local time from UTC
-String timeZoneOffsetString = "-99";
-int timeZoneOffset = -99;
+const int timeZoneOffset = -7; // -5 for EST, -4 for EST, -7 for Marana, AZ
 
 // buttons & switches
 const int buttonPin1 = 35;
@@ -86,7 +84,6 @@ void readLSM();
 void updateBatteryPercentage();
 void readGPS();
 
-void parseGPZDA(String data);
 void parseGPGGA(String data);
 // void parseGPVTG(String data);
 void parseGPRMC(String data);
@@ -254,7 +251,7 @@ void setupGPS()
   GPS_Serial.println("$PMTK220,100*2F"); // Set 10Hz polling rate
   delay(100);                            // Wait for the GPS module to process the command
 
-  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0*28"); // Enable GGA, VTG, and ZDA
+  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // Enable GGA, VTG, and ZDA
   delay(100);                                                              // Delay again just for a little bit
 }
 
@@ -541,11 +538,7 @@ void readGPS()
     {
       parseGPRMC(gpsData);
     }
-    else if (gpsData.startsWith("$GPZDA"))
-    {
-      parseGPZDA(gpsData);
-    }
-    // Serial.println(gpsData);  // Optional debug output
+    
   }
 }
 
@@ -597,85 +590,6 @@ String convertToDecimalDegrees(const String &coordinate, bool isLatitude)
 
   // Convert decimal degrees to string
   return String(decimalDegrees, 6); // 6 decimal places
-}
-
-// Take the raw gps data and convert - $GPZDA 'Date & Time'
-void parseGPZDA(String data)
-{
-  if (data.startsWith("$GPZDA"))
-  {
-    // Split the data using commas
-    int maxFields = 15; // $GPZDA has a maximum of 7 fields
-    String fields[maxFields];
-    int fieldCount = 0;
-
-    int start = 0;
-    int pos = data.indexOf(',');
-    while (pos != -1 && fieldCount < maxFields)
-    {
-      fields[fieldCount] = data.substring(start, pos);
-      fieldCount++;
-
-      start = pos + 1;
-      pos = data.indexOf(',', start);
-    }
-    if (start < data.length() && fieldCount < maxFields)
-    {
-      fields[fieldCount++] = data.substring(start);
-    }
-
-    // UTC hhmmss.ss - not used
-/*
-    // Day
-    if (fieldCount > 0 && fields[2].length() > 0)
-    {
-      dayString = fields[2];
-    }
-    else
-    {
-      dayString = "0";
-    }
-    gpsDateDay = dayString.toInt();
-
-    // Month
-    if (fieldCount > 0 && fields[3].length() > 0)
-    {
-      monthString = fields[3];
-    }
-    else
-    {
-      monthString = "0";
-    }
-    gpsDateMonth = monthString.toInt();
-
-    // Year
-    if (fieldCount > 0 && fields[4].length() > 0)
-    {
-      yearString = fields[4];
-    }
-    else
-    {
-      yearString = "0";
-    }
-    gpsDateYear = yearString.toInt();
-    
-*/
-
-        // Time zone offset
-        if (fieldCount > 5 && fields[5].length() > 0)
-        {
-          timeZoneOffsetString = fields[5];
-        }
-        else
-        {
-          timeZoneOffsetString = "-99";
-        }
-        timeZoneOffset = timeZoneOffsetString.toInt();
-          delay(3000);
-        Serial.print("time zone offset: ");
-        Serial.println(timeZoneOffset);
-      
-  }
 }
 
 // Take the raw gps data and convert - $GPGGA 'Global Positioning System Fix Data'
@@ -852,4 +766,3 @@ void parseGPRMC(String data)
     }
   }
 }
-
