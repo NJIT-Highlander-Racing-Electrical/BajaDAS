@@ -254,7 +254,7 @@ void setupGPS()
   GPS_Serial.println("$PMTK220,100*2F"); // Set 10Hz polling rate
   delay(100);                            // Wait for the GPS module to process the command
 
-  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // Enable GGA (field 2) and VTG (field 4)
+  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0*28"); // Enable GGA, VTG, and ZDA
   delay(100);                                                              // Delay again just for a little bit
 }
 
@@ -541,7 +541,10 @@ void readGPS()
     {
       parseGPRMC(gpsData);
     }
-
+    else if (gpsData.startsWith("$GPZDA"))
+    {
+      parseGPZDA(gpsData);
+    }
     // Serial.println(gpsData);  // Optional debug output
   }
 }
@@ -622,7 +625,7 @@ void parseGPZDA(String data)
     }
 
     // UTC hhmmss.ss - not used
-
+/*
     // Day
     if (fieldCount > 0 && fields[2].length() > 0)
     {
@@ -656,6 +659,8 @@ void parseGPZDA(String data)
     }
     gpsDateYear = yearString.toInt();
     
+*/
+
         // Time zone offset
         if (fieldCount > 5 && fields[5].length() > 0)
         {
@@ -666,6 +671,9 @@ void parseGPZDA(String data)
           timeZoneOffsetString = "-99";
         }
         timeZoneOffset = timeZoneOffsetString.toInt();
+          delay(3000);
+        Serial.print("time zone offset: ");
+        Serial.println(timeZoneOffset);
       
   }
 }
@@ -844,3 +852,4 @@ void parseGPRMC(String data)
     }
   }
 }
+
