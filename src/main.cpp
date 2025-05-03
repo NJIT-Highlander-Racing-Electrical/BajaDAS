@@ -31,7 +31,7 @@ String yearString = "";
 
 // Gets time zone from GPS data string for calculating local time from UTC
 String timeZoneOffsetString = "-99";
-int timeZoneOffset = -7;
+int timeZoneOffset = -99;
 
 // buttons & switches
 const int buttonPin1 = 35;
@@ -655,18 +655,18 @@ void parseGPZDA(String data)
       yearString = "0";
     }
     gpsDateYear = yearString.toInt();
-    /*
+    
         // Time zone offset
-        if (fieldCount > 4 && fields[4].length() > 0)
+        if (fieldCount > 5 && fields[5].length() > 0)
         {
-          timeZoneOffsetString = fields[4];
+          timeZoneOffsetString = fields[5];
         }
         else
         {
           timeZoneOffsetString = "-99";
         }
         timeZoneOffset = timeZoneOffsetString.toInt();
-      */
+      
   }
 }
 
@@ -708,7 +708,7 @@ void parseGPGGA(String data)
     hourString = timedat.substring(0, 2);
 
     int hours = hourString.toInt(); // Convert the string to an integer
-    hours -= 4;
+    hours -= timeZoneOffset;
     // Handle cases where the offset causes the hour to go negative
     if (hours < 0)
     {
