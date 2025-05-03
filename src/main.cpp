@@ -31,7 +31,7 @@ String yearString = "";
 
 // Gets time zone from GPS data string for calculating local time from UTC
 String timeZoneOffsetString = "-99";
-int timeZoneOffset = -99;
+int timeZoneOffset = -7;
 
 // buttons & switches
 const int buttonPin1 = 35;
@@ -88,7 +88,7 @@ void readGPS();
 
 void parseGPZDA(String data);
 void parseGPGGA(String data);
-//void parseGPVTG(String data);
+// void parseGPVTG(String data);
 void parseGPRMC(String data);
 String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
 
@@ -171,8 +171,8 @@ void setupLSM()
   Serial.println("Found LSM9DS1 9DOF");
 
   // 1.) Set the accelerometer range
-  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
-   lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
+  // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
+  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
 
@@ -526,21 +526,25 @@ void updateBatteryPercentage()
     batteryPercentage = 0; // Below 10.5V is over-discharged
 }
 
-void readGPS() {
-  while (GPS_Serial.available()) {
+void readGPS()
+{
+  while (GPS_Serial.available())
+  {
     String gpsData = GPS_Serial.readStringUntil('\n');
     gpsData.trim();
 
-    if (gpsData.startsWith("$GPGGA")) {
+    if (gpsData.startsWith("$GPGGA"))
+    {
       parseGPGGA(gpsData);
-    } else if (gpsData.startsWith("$GPRMC")) {
+    }
+    else if (gpsData.startsWith("$GPRMC"))
+    {
       parseGPRMC(gpsData);
     }
 
     // Serial.println(gpsData);  // Optional debug output
   }
 }
-
 
 void setNextAvailableFilePath()
 {
@@ -651,17 +655,18 @@ void parseGPZDA(String data)
       yearString = "0";
     }
     gpsDateYear = yearString.toInt();
-
-    // Time zone offset
-    if (fieldCount > 0 && fields[5].length() > 0)
-    {
-      timeZoneOffsetString = fields[5];
-    }
-    else
-    {
-      timeZoneOffsetString = "-99";
-    }
-    timeZoneOffset = timeZoneOffsetString.toInt();
+    /*
+        // Time zone offset
+        if (fieldCount > 4 && fields[4].length() > 0)
+        {
+          timeZoneOffsetString = fields[4];
+        }
+        else
+        {
+          timeZoneOffsetString = "-99";
+        }
+        timeZoneOffset = timeZoneOffsetString.toInt();
+      */
   }
 }
 
@@ -781,47 +786,60 @@ void parseGPGGA(String data)
     }
   }
 }
-void parseGPRMC(String data) {
-  if (data.startsWith("$GPRMC")) {
+void parseGPRMC(String data)
+{
+  if (data.startsWith("$GPRMC"))
+  {
     int maxFields = 12;
     String fields[maxFields];
     int fieldCount = 0;
 
     int start = 0;
     int pos = data.indexOf(',');
-    while (pos != -1 && fieldCount < maxFields) {
+    while (pos != -1 && fieldCount < maxFields)
+    {
       fields[fieldCount++] = data.substring(start, pos);
       start = pos + 1;
       pos = data.indexOf(',', start);
     }
-    if (start < data.length() && fieldCount < maxFields) {
+    if (start < data.length() && fieldCount < maxFields)
+    {
       fields[fieldCount++] = data.substring(start);
     }
 
     // Speed in knots (field 7), convert to MPH
-    if (fieldCount > 7 && fields[7].length() > 0) {
+    if (fieldCount > 7 && fields[7].length() > 0)
+    {
       float speedKnots = fields[7].toFloat();
-      gpsVelocity = speedKnots * 1.15078;  // MPH
-    } else {
+      gpsVelocity = speedKnots * 1.15078; // MPH
+    }
+    else
+    {
       gpsVelocity = -1;
     }
 
     // Heading in degrees (field 8)
-    if (fieldCount > 8 && fields[8].length() > 0) {
+    if (fieldCount > 8 && fields[8].length() > 0)
+    {
       gpsHeading = fields[8].toFloat();
-    } else {
+    }
+    else
+    {
       gpsHeading = -1;
     }
 
     // Date: DDMMYY (field 9)
-    if (fieldCount > 9 && fields[9].length() == 6) {
+    if (fieldCount > 9 && fields[9].length() == 6)
+    {
       dayString = fields[9].substring(0, 2);
       monthString = fields[9].substring(2, 4);
       yearString = "20" + fields[9].substring(4, 6);
       gpsDateDay = dayString.toInt();
       gpsDateMonth = monthString.toInt();
-      gpsDateYear = 2000 + yearString.toInt();  // Convert to 4-digit year
-    } else {
+      gpsDateYear = 2000 + yearString.toInt(); // Convert to 4-digit year
+    }
+    else
+    {
       gpsDateDay = gpsDateMonth = gpsDateYear = -1;
     }
   }
