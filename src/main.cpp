@@ -624,13 +624,13 @@ void parseGPGGA(String data)
     }
     else
     {
-      timedat = "err";
+      timedat = "err";  
     }
 
     hourString = timedat.substring(0, 2);
 
     int hours = hourString.toInt(); // Convert the string to an integer
-    hours -= timeZoneOffset;
+    hours += timeZoneOffset;
     // Handle cases where the offset causes the hour to go negative
     if (hours < 0)
     {
