@@ -29,7 +29,7 @@ String dayString = "";
 String monthString = "";
 String yearString = "";
 
-const int timeZoneOffset = -7; // -5 for EST, -4 for EST, -7 for Marana, AZ
+const int timeZoneOffset = -4; // -5 for EST, -4 for EDT, -7 for Marana, AZ
 
 // buttons & switches
 const int buttonPin1 = 35;
@@ -317,7 +317,7 @@ void logSD()
   else
   {
     Serial.printf("Failed to open file");
-    Serial.println();
+    Serial.println();   
   }
 }
 
@@ -758,7 +758,7 @@ void parseGPRMC(String data)
       yearString = "20" + fields[9].substring(4, 6);
       gpsDateDay = dayString.toInt();
       gpsDateMonth = monthString.toInt();
-      gpsDateYear = 2000 + yearString.toInt(); // Convert to 4-digit year
+      gpsDateYear = yearString.toInt(); // Convert to 4-digit year
     }
     else
     {
