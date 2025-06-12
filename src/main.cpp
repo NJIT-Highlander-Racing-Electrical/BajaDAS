@@ -6,7 +6,7 @@
 #define TX_GPIO_NUM 25 // Connects to CTX
 #define RX_GPIO_NUM 26 // Connects to CRX
 
-bool serialStudioLogging = true; // Set to true if using SerialStudio, false if just using Serial Monitor
+bool serialStudioLogging = false; // Set to true if using SerialStudio, false if just using Serial Monitor
 
 #include <math.h>
 #include <string>
@@ -317,7 +317,7 @@ void logSD()
   else
   {
     Serial.printf("Failed to open file");
-    Serial.println();   
+    Serial.println();
   }
 }
 
@@ -348,7 +348,7 @@ void logSerial()
   }
   else
   {
-    sepChar = '\n'; // If we are just using the serial monitor, make it look nice using tabs instead
+    sepChar = '\t'; // If we are just using the serial monitor, make it look nice using tabs instead
   }
 
   // Time data
@@ -538,7 +538,6 @@ void readGPS()
     {
       parseGPRMC(gpsData);
     }
-    
   }
 }
 
@@ -624,7 +623,7 @@ void parseGPGGA(String data)
     }
     else
     {
-      timedat = "err";  
+      timedat = "err";
     }
 
     hourString = timedat.substring(0, 2);
