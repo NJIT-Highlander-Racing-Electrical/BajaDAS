@@ -6,7 +6,7 @@
 #define TX_GPIO_NUM 25 // Connects to CTX
 #define RX_GPIO_NUM 26 // Connects to CRX
 
-bool serialStudioLogging = false; // Set to true if using SerialStudio, false if just using Serial Monitor
+bool serialStudioLogging = true; // Set to true if using SerialStudio, false if just using Serial Monitor
 
 #include <math.h>
 #include <string>
@@ -121,6 +121,22 @@ void setup()
 
 void loop()
 {
+
+static unsigned long lastSecond = 0;
+static int gpsCount = 0;
+
+if (GPS_Serial.available()) {
+  char c = GPS_Serial.read();
+  if (c == '$') gpsCount++; // crude count of NMEA sentences per second
+
+  if (millis() - lastSecond >= 1000) {
+    Serial.print("GPS sentences per second: ");
+    Serial.println(gpsCount);
+    gpsCount = 0;
+    lastSecond = millis();
+  }
+}
+
 
   delay(1);
 
@@ -358,7 +374,7 @@ void logSerial()
   Serial.print(sepChar);
   Serial.print(secondString);
   Serial.print(sepChar);
-  Serial.print(time_from_start); // Assuming time_from_start is program time in seconds. This can be plotted on the x-axis!
+  Serial.print(time_from_start, 3); // Assuming time_from_start is program time in seconds. This can be plotted on the x-axis!
 
   // Data Screenshot Flag Marker
   Serial.print(sepChar);
@@ -366,25 +382,25 @@ void logSerial()
 
   // Battery Data
   Serial.print(sepChar);
-  Serial.print(batteryVoltage);
+  Serial.print(batteryVoltage, 3);
   Serial.print(sepChar);
   Serial.print(batteryPercentage);
 
   // Accel data
   Serial.print(sepChar);
-  Serial.print(a.acceleration.x); // Accel X
+  Serial.print(a.acceleration.x, 3); // Accel X
   Serial.print(sepChar);
-  Serial.print(a.acceleration.y); // Accel Y
+  Serial.print(a.acceleration.y, 3); // Accel Y
   Serial.print(sepChar);
-  Serial.print(a.acceleration.z); // Accel Z
+  Serial.print(a.acceleration.z, 3); // Accel Z
 
   // Gyro data
   Serial.print(sepChar);
-  Serial.print(g.gyro.x); // Gyro X
+  Serial.print(g.gyro.x, 3); // Gyro X
   Serial.print(sepChar);
-  Serial.print(g.gyro.y); // Gyro Y
+  Serial.print(g.gyro.y, 3); // Gyro Y
   Serial.print(sepChar);
-  Serial.print(g.gyro.z); // Gyro Z
+  Serial.print(g.gyro.z, 3); // Gyro Z
 
   // GPS data
   Serial.print(sepChar);
@@ -414,13 +430,13 @@ void logSerial()
 
   // Wheel RPM Data
   Serial.print(sepChar);
-  Serial.print(frontLeftWheelSpeed);
+  Serial.print(frontLeftWheelSpeed, 3);
   Serial.print(sepChar);
-  Serial.print(frontRightWheelSpeed);
+  Serial.print(frontRightWheelSpeed, 3);
   Serial.print(sepChar);
-  Serial.print(rearLeftWheelSpeed);
+  Serial.print(rearLeftWheelSpeed, 3);
   Serial.print(sepChar);
-  Serial.print(rearRightWheelSpeed);
+  Serial.print(rearRightWheelSpeed, 3);
 
   // Wheel State Data
   Serial.print(sepChar);
@@ -434,13 +450,13 @@ void logSerial()
 
   // Wheel Displacement Data
   Serial.print(sepChar);
-  Serial.print(frontLeftDisplacement);
+  Serial.print(frontLeftDisplacement, 3);
   Serial.print(sepChar);
-  Serial.print(frontRightDisplacement);
+  Serial.print(frontRightDisplacement, 3);
   Serial.print(sepChar);
-  Serial.print(rearLeftDisplacement);
+  Serial.print(rearLeftDisplacement, 3);
   Serial.print(sepChar);
-  Serial.print(rearRightDisplacement);
+  Serial.print(rearRightDisplacement, 3);
 
   // Pedal Data
   Serial.print(sepChar);
