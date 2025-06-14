@@ -225,36 +225,31 @@ void setupSD()
   Serial.printf("SD Card Size: %lluMB\n", cardSize);
 }
 
-void setupGPS()
-{
-  Serial.println("Initializing GPS on Serial2 at 9600 bps"); // Initialize first to 9600 because this is the default for the module
-  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17);                // RX2, TX2
+void setupGPS() {
+  Serial.println("Initializing GPS on Serial2 at 9600 bps");
+  GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // Start at 9600 default
+  
+  delay(1000); // Give GPS module time to wake up
 
-  while (!GPS_Serial)
-  {
-    delay(1);
-  }
-
-  Serial.println("Found GPS");
-
-  // Send the command to change the baud rate to 57600 (for 10Hz polling)
+  // Step 1: Tell GPS to switch to 57600 baud
   GPS_Serial.println("$PMTK251,57600*2C");
-  delay(1000); // Wait for the GPS module to process the command
+  delay(1000); // Wait for GPS to receive and apply change
 
-  // Now, reinitialize GPS_Serial with 57600 baud rate
-  GPS_Serial.end();                            // End the current serial connection
-  GPS_Serial.begin(57600, SERIAL_8N1, 16, 17); // Reinitialize at 57600 baud rate
-  Serial.println("GPS baud rate set to 57600");
-  delay(250);
+  // Step 2: Switch Serial to 57600
+  GPS_Serial.end();
+  delay(100);
+  GPS_Serial.begin(57600, SERIAL_8N1, 16, 17);
+  Serial.println("Switched to 57600");
 
-  // Set GPS update rate to 10Hz (100ms)
-  GPS_Serial.println("$PMTK220,100*2F"); // Set 10Hz polling rate
-  delay(250);                            // Wait for the GPS module to process the command
+  delay(1000); // Wait for GPS to stabilize at new baud
 
-  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // Enable GGA, VTG, and ZDA
-  delay(100);                                                              // Delay again just for a little bit
+  // Step 3: Send 10Hz update command
+  GPS_Serial.println("$PMTK220,100*2F"); // 100 ms = 10 Hz
+  delay(100);
+
+  GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28");
+  delay(100);
 }
-
 // Runs once whenever a log file is started from dashboard button
 void createFileSD()
 {
@@ -522,24 +517,24 @@ void updateBatteryPercentage()
   else
     batteryPercentage = 0; // Below 10.5V is over-discharged
 }
-
 void readGPS()
 {
   while (GPS_Serial.available())
   {
-    String gpsData = GPS_Serial.readStringUntil('\n');
-    gpsData.trim();
+    String gpsData = GPS_Serial.readStringUntil('\n');  // Read a line of data from the GPS serial port
+    gpsData.trim();                                     // Remove any leading or trailing whitespace/newline characters
 
-    if (gpsData.startsWith("$GPGGA"))
+    if (gpsData.startsWith("$GPGGA"))                   // Check if the line is a GPGGA sentence
     {
-      parseGPGGA(gpsData);
+      parseGPGGA(gpsData);                              // Parse the GPGGA sentence for position, fix, satellites, altitude, etc.
     }
-    else if (gpsData.startsWith("$GPRMC"))
+    else if (gpsData.startsWith("$GPRMC"))              // Check if the line is a GPRMC sentence
     {
-      parseGPRMC(gpsData);
+      parseGPRMC(gpsData);                              // Parse the GPRMC sentence for speed, heading, date, etc.
     }
   }
 }
+
 
 void setNextAvailableFilePath()
 {
