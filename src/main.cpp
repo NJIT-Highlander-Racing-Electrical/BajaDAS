@@ -121,23 +121,6 @@ void setup()
 
 void loop()
 {
-
-static unsigned long lastSecond = 0;
-static int gpsCount = 0;
-
-if (GPS_Serial.available()) {
-  char c = GPS_Serial.read();
-  if (c == '$') gpsCount++; // crude count of NMEA sentences per second
-
-  if (millis() - lastSecond >= 1000) {
-    Serial.print("GPS sentences per second: ");
-    Serial.println(gpsCount);
-    gpsCount = 0;
-    lastSecond = millis();
-  }
-}
-
-
   delay(1);
 
   time_from_start = millis() / 1000.0;
@@ -262,10 +245,11 @@ void setupGPS()
   GPS_Serial.end();                            // End the current serial connection
   GPS_Serial.begin(57600, SERIAL_8N1, 16, 17); // Reinitialize at 57600 baud rate
   Serial.println("GPS baud rate set to 57600");
+  delay(250);
 
   // Set GPS update rate to 10Hz (100ms)
   GPS_Serial.println("$PMTK220,100*2F"); // Set 10Hz polling rate
-  delay(100);                            // Wait for the GPS module to process the command
+  delay(250);                            // Wait for the GPS module to process the command
 
   GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // Enable GGA, VTG, and ZDA
   delay(100);                                                              // Delay again just for a little bit
