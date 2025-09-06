@@ -105,7 +105,7 @@ void setup()
   pinMode(batteryPin, INPUT);
 
   // start serial
-  Serial.begin(115200);
+  Serial.begin(460800);
   delay(1000); // I don't think while(!Serial) works on ESP32, so just delay while the serial initializes
 
   // setup connections to various modules
