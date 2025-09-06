@@ -304,7 +304,7 @@ void logSD()
 
   if (logFile)
   {
-    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %i, %i, %i, %i, %f, %f, %f, %f, %i, %i, %f\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, frontBrakePressure, rearBrakePressure, gasPedalPercentage))
+    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, frontBrakePressure, rearBrakePressure, gasPedalPercentage))
     {
       Serial.println("Logging Failed.");
     }
@@ -416,16 +416,6 @@ void logSerial()
   Serial.print(rearLeftWheelSpeed, 3);
   Serial.print(sepChar);
   Serial.print(rearRightWheelSpeed, 3);
-
-  // Wheel State Data
-  Serial.print(sepChar);
-  Serial.print(frontLeftWheelState);
-  Serial.print(sepChar);
-  Serial.print(frontRightWheelState);
-  Serial.print(sepChar);
-  Serial.print(rearLeftWheelState);
-  Serial.print(sepChar);
-  Serial.print(rearRightWheelState);
 
   // Wheel Displacement Data
   Serial.print(sepChar);
