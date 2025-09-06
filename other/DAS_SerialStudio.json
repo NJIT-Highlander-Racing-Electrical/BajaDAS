@@ -508,9 +508,26 @@
                     "units": "",
                     "value": "--.--",
                     "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "fftSamplingRate": 100,
+                    "graph": false,
+                    "index": 36,
+                    "led": true,
+                    "ledHigh": 1,
+                    "log": false,
+                    "max": 1,
+                    "min": 0,
+                    "title": "SD Logging Active",
+                    "units": "",
+                    "value": "",
+                    "widget": ""
                 }
             ],
-            "title": "Screenshot Flag",
+            "title": "Dashboard Flags",
             "widget": ""
         },
         {

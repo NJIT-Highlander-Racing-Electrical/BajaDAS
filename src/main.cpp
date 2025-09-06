@@ -435,6 +435,10 @@ void logSerial()
   Serial.print(sepChar);
   Serial.print(gasPedalPercentage);
 
+  // SD Logging Active
+  Serial.print(sepChar);
+  Serial.print(sdLoggingActive);
+
   Serial.println(); // Finish with a newline
 }
 
