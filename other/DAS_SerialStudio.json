@@ -52,10 +52,10 @@
                     "led": false,
                     "ledHigh": 1,
                     "log": false,
-                    "max": 0,
+                    "max": 5000,
                     "min": 0,
                     "title": "Altitude",
-                    "units": "m",
+                    "units": "ft",
                     "value": "--.--",
                     "widget": "alt"
                 }
@@ -109,7 +109,7 @@
                     "led": false,
                     "ledHigh": 1,
                     "log": false,
-                    "max": 0,
+                    "max": 360,
                     "min": 0,
                     "title": "Heading",
                     "units": "",
@@ -183,7 +183,7 @@
                     "led": false,
                     "ledHigh": 1,
                     "log": false,
-                    "max": 300,
+                    "max": 200,
                     "min": 0,
                     "title": "CVT Primary Temperature",
                     "units": "Degrees (F)",
@@ -200,7 +200,7 @@
                     "led": false,
                     "ledHigh": 1,
                     "log": false,
-                    "max": 300,
+                    "max": 200,
                     "min": 0,
                     "title": "CVT Secondary Temperature",
                     "units": "Degrees (F)",
@@ -428,12 +428,12 @@
                     "led": false,
                     "ledHigh": 1,
                     "log": false,
-                    "max": 0,
+                    "max": 12,
                     "min": 0,
                     "title": "Hour",
                     "units": "",
                     "value": "--.--",
-                    "widget": ""
+                    "widget": "bar"
                 },
                 {
                     "alarm": 0,
@@ -448,9 +448,9 @@
                     "max": 0,
                     "min": 0,
                     "title": "Minute",
-                    "units": "",
+                    "units": "60",
                     "value": "--.--",
-                    "widget": ""
+                    "widget": "bar"
                 },
                 {
                     "alarm": 0,
@@ -465,9 +465,9 @@
                     "max": 0,
                     "min": 0,
                     "title": "Second",
-                    "units": "",
+                    "units": "60",
                     "value": "--.--",
-                    "widget": ""
+                    "widget": "bar"
                 },
                 {
                     "alarm": 0,
@@ -523,7 +523,7 @@
                     "min": 0,
                     "title": "SD Logging Active",
                     "units": "",
-                    "value": "",
+                    "value": "--.--",
                     "widget": ""
                 }
             ],

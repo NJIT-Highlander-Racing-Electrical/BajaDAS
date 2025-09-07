@@ -42,6 +42,8 @@ bool dasError = false;
 int batteryPin = 33;
 float batVoltageDividerRatio = 0.23255813953;
 float batteryVoltage;
+unsigned long lastBatteryCheckMillis = 0;
+int batteryCheckFrequency = 10000; // Check battery voltage once every 10 seconds
 
 // time from program start in seconds
 float time_from_start;
@@ -69,11 +71,16 @@ Adafruit_LSM9DS1 lsm = Adafruit_LSM9DS1(XG_CS, M_CS);
 sensors_event_t a, m, g, temp;
 
 // log file setup
-File logFile;
+File logFile; // Keep file handle open for fast logging
 bool fileCreated = false;           // This variable is used to know if we are creating a new file, or just simply logging (in the main loop)
 bool filenameIsDescriptive = false; // So we know what type of file we made. We don't want the conditions to change mid-logging and our files to get corrupted
 String logFilePathDescriptive = "/yyyy-mm-dd_hh-mm-ss.csv";
 char logFilePath[13] = "/log.csv"; // up to "/log9999.csv" and the null terminator.
+
+// Fast SD logging variables
+bool logFileIsOpen = false;
+unsigned long lastFlush = 0;
+const unsigned long FLUSH_INTERVAL = 200; // Flush every 200ms for power-loss protection
 
 // function declarations here:
 void setupSD();
@@ -85,15 +92,15 @@ void updateBatteryPercentage();
 void readGPS();
 
 void parseGPGGA(String data);
-// void parseGPVTG(String data);
 void parseGPRMC(String data);
 String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
 
 void logSerial();
-void logSD();
+void createFileSD();
+void openLogFileOnce();
+void fastLogSD();
 
 void setNextAvailableFilePath();
-void createFileSD();
 
 void setup()
 {
@@ -126,7 +133,6 @@ void loop()
   time_from_start = millis() / 1000.0;
 
   // read data from modules
-
   readLSM();
   readGPS();
   updateBatteryPercentage();
@@ -134,21 +140,31 @@ void loop()
   // log data to serial connection
   logSerial();
 
-  // log data to SD
+  // log data to SD with keep-file-open approach
   if (sdLoggingActive)
   {
-
-    // If we have not already, create the file to log to
+    // Open file once and keep it open
     if (!fileCreated)
     {
       createFileSD();
+      openLogFileOnce();
       fileCreated = true;
     }
-
-    logSD(); // Save the most recent data to the SD card
+    
+    // Fast logging to already-open file
+    if (logFileIsOpen)
+    {
+      fastLogSD();
+    }
   }
-  else // If we are here, our logging ended and we should reset the file created bit (so we can create a new file next time logging is started)
+  else // If we are here, our logging ended and we should close the file and reset flags
   {
+    // Close file when logging stops
+    if (logFileIsOpen)
+    {
+      logFile.close();
+      logFileIsOpen = false;
+    }
     fileCreated = false;
   }
 }
@@ -250,69 +266,98 @@ void setupGPS() {
   GPS_Serial.println("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28");
   delay(100);
 }
-// Runs once whenever a log file is started from dashboard button
+
+// Modified createFileSD - just creates the file, doesn't keep it open
 void createFileSD()
 {
-  setNextAvailableFilePath(); // Creates a log path from GPS date/time (if we have it) or from next sequential log number (e.g. "log4")
+  setNextAvailableFilePath();
 
-  if (gpsDateDay > 0 && gpsDateDay <= 31) // Case for if we have a date/time fix
+  String filePath;
+  if (gpsDateDay > 0 && gpsDateDay <= 31 && gpsDateYear != 2080)
   {
-    logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
-    Serial.printf("Logging to %s : ", logFilePathDescriptive);
+    filePath = logFilePathDescriptive;
     filenameIsDescriptive = true;
   }
-  else // Case for if we are using non-descriptive file (e.g. "log4")
-  {
-    logFile = SD.open(logFilePath, FILE_APPEND);
-    Serial.printf("Logging to %s : ", logFilePath);
-    filenameIsDescriptive = false;
-  }
-
-  if (logFile) // If the log file sucessfully opened on the SD Card
-  {
-    dasError = false; // Clear data logging error flag
-    Serial.println();
-
-    // Print headers to CSV
-    if (!logFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelspeed, fr_wheelspeed, rl_wheelspeed, rr_wheelspeed, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos"))
-    {
-      Serial.println("Logging Failed.");
-    }
-    logFile.close();
-  }
-  // if the file didn't open, print an error:
   else
   {
-    Serial.printf("Failed to open file");
-    Serial.println();
+    filePath = String(logFilePath);
+    filenameIsDescriptive = false;
+  }
+  
+  // Create file and write header if new
+  File tempFile = SD.open(filePath, FILE_APPEND);
+  if (tempFile)
+  {
+    dasError = false;
+    Serial.printf("Created log file: %s\n", filePath.c_str());
+    
+    // Write CSV header only if file is new (empty)
+    if (tempFile.size() == 0)
+    {
+      if (!tempFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelspeed, fr_wheelspeed, rl_wheelspeed, rr_wheelspeed, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos"))
+      {
+        Serial.println("Failed to write header");
+      }
+    }
+    
+    tempFile.close();
+  }
+  else
+  {
+    Serial.printf("Failed to create file: %s\n", filePath.c_str());
     dasError = true;
   }
 }
 
-void logSD()
+void openLogFileOnce()
 {
-  if (filenameIsDescriptive) // Case for if we have a date/time fix
+  if (filenameIsDescriptive)
   {
     logFile = SD.open(logFilePathDescriptive, FILE_APPEND);
-    // Serial.printf("Loggind to %s", logFilePathDescriptive);
-  }
-  else // Case for if we are using non-descriptive file (e.g. "log4")
-  {
-    logFile = SD.open(logFilePath, FILE_APPEND);
-    // Serial.printf("Logging to %s", logFilePath);
-  }
-
-  if (logFile)
-  {
-    if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f\n", hourString, minuteString, secondString, time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, a.acceleration.x, a.acceleration.y, a.acceleration.z, g.gyro.x, g.gyro.y, g.gyro.z, latitudeDecimal.c_str(), longitudeDecimal.c_str(), hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, frontBrakePressure, rearBrakePressure, gasPedalPercentage))
-    {
-      Serial.println("Logging Failed.");
-    }
   }
   else
   {
-    Serial.printf("Failed to open file");
-    Serial.println();
+    logFile = SD.open(logFilePath, FILE_APPEND);
+  }
+  
+  if (logFile)
+  {
+    logFileIsOpen = true;
+    Serial.println("Log file opened for fast logging");
+  }
+  else
+  {
+    Serial.println("Failed to open log file for logging");
+    dasError = true;
+  }
+}
+
+void fastLogSD()
+{
+  if (!logFile) return;
+  
+  // Write data - fast operation (~1ms)
+  if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f\n", 
+      hourString.c_str(), minuteString.c_str(), secondString.c_str(), 
+      time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, 
+      a.acceleration.x, a.acceleration.y, a.acceleration.z, 
+      g.gyro.x, g.gyro.y, g.gyro.z, 
+      latitudeDecimal.c_str(), longitudeDecimal.c_str(), 
+      hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, 
+      primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, 
+      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, 
+      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, 
+      frontBrakePressure, rearBrakePressure, gasPedalPercentage))
+  {
+    Serial.println("Fast logging failed");
+  }
+  
+  // Periodic flush for power-loss protection
+  unsigned long currentTime = millis();
+  if (currentTime - lastFlush >= FLUSH_INTERVAL)
+  {
+    logFile.flush(); // Force write to SD card
+    lastFlush = currentTime;
   }
 }
 
@@ -442,75 +487,84 @@ void logSerial()
   Serial.println(); // Finish with a newline
 }
 
+
 void updateBatteryPercentage()
 {
 
-  int numSamples = 10;
-
-  float voltageReadingList[numSamples];
-
-  // take 10 readings for averaging
-  for (int i = 0; i < numSamples; i++)
+  if ((millis() - lastBatteryCheckMillis) > batteryCheckFrequency)
   {
-    voltageReadingList[i] = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.025 / batVoltageDividerRatio; // multiplied by 1.025 to account for voltage drop
+
+    int numSamples = 10;
+
+    float voltageReadingList[numSamples];
+
+    // take 10 readings for averaging
+    for (int i = 0; i < numSamples; i++)
+    {
+      voltageReadingList[i] = float(analogRead(batteryPin)) / 4095 * 3.3 * 1.025 / batVoltageDividerRatio; // multiplied by 1.025 to account for voltage drop
+    }
+
+    // sum up those 10 readings
+    float readingsSum = 0;
+    for (int i = 0; i < numSamples; i++)
+    {
+      readingsSum += voltageReadingList[i];
+    }
+
+    // calculate average
+
+    batteryVoltage = readingsSum / numSamples;
+
+    if (batteryVoltage >= 12.60)
+      batteryPercentage = 100;
+    else if (batteryVoltage >= 12.54)
+      batteryPercentage = 95;
+    else if (batteryVoltage >= 12.48)
+      batteryPercentage = 90;
+    else if (batteryVoltage >= 12.42)
+      batteryPercentage = 85;
+    else if (batteryVoltage >= 12.36)
+      batteryPercentage = 80;
+    else if (batteryVoltage >= 12.30)
+      batteryPercentage = 75;
+    else if (batteryVoltage >= 12.18)
+      batteryPercentage = 70;
+    else if (batteryVoltage >= 12.06)
+      batteryPercentage = 65;
+    else if (batteryVoltage >= 11.94)
+      batteryPercentage = 60;
+    else if (batteryVoltage >= 11.82)
+      batteryPercentage = 55;
+    else if (batteryVoltage >= 11.70)
+      batteryPercentage = 50;
+    else if (batteryVoltage >= 11.58)
+      batteryPercentage = 45;
+    else if (batteryVoltage >= 11.46)
+      batteryPercentage = 40;
+    else if (batteryVoltage >= 11.34)
+      batteryPercentage = 35;
+    else if (batteryVoltage >= 11.22)
+      batteryPercentage = 30;
+    else if (batteryVoltage >= 11.10)
+      batteryPercentage = 25;
+    else if (batteryVoltage >= 10.98)
+      batteryPercentage = 20;
+    else if (batteryVoltage >= 10.86)
+      batteryPercentage = 15;
+    else if (batteryVoltage >= 10.74)
+      batteryPercentage = 10;
+    else if (batteryVoltage >= 10.62)
+      batteryPercentage = 5;
+    else if (batteryVoltage >= 10.50)
+      batteryPercentage = 0;
+    else
+      batteryPercentage = 0; // Below 10.5V is over-discharged
+
+      lastBatteryCheckMillis = millis();
+
   }
-
-  // sum up those 10 readings
-  float readingsSum = 0;
-  for (int i = 0; i < numSamples; i++)
-  {
-    readingsSum += voltageReadingList[i];
-  }
-
-  // calculate average
-
-  batteryVoltage = readingsSum / numSamples;
-
-  if (batteryVoltage >= 12.60)
-    batteryPercentage = 100;
-  else if (batteryVoltage >= 12.54)
-    batteryPercentage = 95;
-  else if (batteryVoltage >= 12.48)
-    batteryPercentage = 90;
-  else if (batteryVoltage >= 12.42)
-    batteryPercentage = 85;
-  else if (batteryVoltage >= 12.36)
-    batteryPercentage = 80;
-  else if (batteryVoltage >= 12.30)
-    batteryPercentage = 75;
-  else if (batteryVoltage >= 12.18)
-    batteryPercentage = 70;
-  else if (batteryVoltage >= 12.06)
-    batteryPercentage = 65;
-  else if (batteryVoltage >= 11.94)
-    batteryPercentage = 60;
-  else if (batteryVoltage >= 11.82)
-    batteryPercentage = 55;
-  else if (batteryVoltage >= 11.70)
-    batteryPercentage = 50;
-  else if (batteryVoltage >= 11.58)
-    batteryPercentage = 45;
-  else if (batteryVoltage >= 11.46)
-    batteryPercentage = 40;
-  else if (batteryVoltage >= 11.34)
-    batteryPercentage = 35;
-  else if (batteryVoltage >= 11.22)
-    batteryPercentage = 30;
-  else if (batteryVoltage >= 11.10)
-    batteryPercentage = 25;
-  else if (batteryVoltage >= 10.98)
-    batteryPercentage = 20;
-  else if (batteryVoltage >= 10.86)
-    batteryPercentage = 15;
-  else if (batteryVoltage >= 10.74)
-    batteryPercentage = 10;
-  else if (batteryVoltage >= 10.62)
-    batteryPercentage = 5;
-  else if (batteryVoltage >= 10.50)
-    batteryPercentage = 0;
-  else
-    batteryPercentage = 0; // Below 10.5V is over-discharged
 }
+
 void readGPS()
 {
   while (GPS_Serial.available())
