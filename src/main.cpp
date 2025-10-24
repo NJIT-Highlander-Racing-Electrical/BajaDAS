@@ -294,7 +294,7 @@ void createFileSD()
     // Write CSV header only if file is new (empty)
     if (tempFile.size() == 0)
     {
-      if (!tempFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelspeed, fr_wheelspeed, rl_wheelspeed, rr_wheelspeed, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos"))
+      if (!tempFile.println("Hour, Minute, Second, time_from_start, screenshot_flag, bat_voltage, bat_percent, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, lat, lon, has_fix, num_sats, altitude (ft AGL), heading, velocity (mph), primary_rpm, secondary_rpm, primary_temp, secondary_temp, fl_wheelspeed, fr_wheelspeed, rl_wheelspeed, rr_wheelspeed, fl_wheelstate, fr_wheelstate, rl_wheelstate, rr_wheelstate, fl_wheelpos, fr_wheelpos, rl_wheelpos, rr_wheelpos, front_brake_pressure, rear_brake_pressure, gas_pos, belt_temp"))
       {
         Serial.println("Failed to write header");
       }
@@ -337,7 +337,7 @@ void fastLogSD()
   if (!logFile) return;
   
   // Write data - fast operation (~1ms)
-  if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f\n", 
+  if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f, %i\n", 
       hourString.c_str(), minuteString.c_str(), secondString.c_str(), 
       time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, 
       a.acceleration.x, a.acceleration.y, a.acceleration.z, 
@@ -347,7 +347,7 @@ void fastLogSD()
       primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, 
       frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, 
       frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, 
-      frontBrakePressure, rearBrakePressure, gasPedalPercentage))
+      frontBrakePressure, rearBrakePressure, gasPedalPercentage, beltTemperature))
   {
     Serial.println("Fast logging failed");
   }
@@ -451,6 +451,8 @@ void logSerial()
   Serial.print(primaryTemperature);
   Serial.print(sepChar);
   Serial.print(secondaryTemperature);
+  Serial.print(sepChar);
+  Serial.print(beltTemperature);
 
   // Wheel RPM Data
   Serial.print(sepChar);
