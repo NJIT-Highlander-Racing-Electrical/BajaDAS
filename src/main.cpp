@@ -184,9 +184,9 @@ void setupLSM()
 
   // 1.) Set the accelerometer range
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_2G);
-  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
+  //lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_4G);
   // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_8G);
-  // lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
+  lsm.setupAccel(lsm.LSM9DS1_ACCELRANGE_16G);
 
   // 2.) Set the magnetometer sensitivity
   lsm.setupMag(lsm.LSM9DS1_MAGGAIN_4GAUSS);
