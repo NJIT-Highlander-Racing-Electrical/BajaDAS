@@ -331,23 +331,24 @@ void openLogFileOnce()
     dasError = true;
   }
 }
-
 void fastLogSD()
 {
   if (!logFile) return;
   
   // Write data - fast operation (~1ms)
-  if (!logFile.printf("%s, %s, %s, %f, %i, %f, %i, %f, %f, %f, %f, %f, %f, %s, %s, %i, %i, %i, %i, %i, %i, %i, %i, %i, %f, %f, %f, %f, %f, %f, %f, %f, %i, %i, %f, %i\n", 
-      hourString.c_str(), minuteString.c_str(), secondString.c_str(), 
-      time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage, 
-      a.acceleration.x, a.acceleration.y, a.acceleration.z, 
-      g.gyro.x, g.gyro.y, g.gyro.z, 
-      latitudeDecimal.c_str(), longitudeDecimal.c_str(), 
-      hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity, 
-      primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature, 
-      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed, 
-      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement, 
-      frontBrakePressure, rearBrakePressure, gasPedalPercentage, beltTemperature))
+  // Need to match header: 40 columns total
+  if (!logFile.printf("%s,%s,%s,%f,%i,%f,%i,%f,%f,%f,%f,%f,%f,%s,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%f,%f,%f,%f,%i,%i,%i,%i,%f,%f,%f,%f,%i,%i,%i,%i\n", 
+      hourString.c_str(), minuteString.c_str(), secondString.c_str(),  // Time strings
+      time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage,  // System data
+      a.acceleration.x, a.acceleration.y, a.acceleration.z,  // Accelerometer (float)
+      g.gyro.x, g.gyro.y, g.gyro.z,  // Gyroscope (float)
+      latitudeDecimal.c_str(), longitudeDecimal.c_str(),  // GPS position (string)
+      hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity,  // GPS data (int)
+      primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature,  // CVT data (int)
+      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed,  // Wheel speeds (float)
+      frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState,  // Wheel states (int)
+      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement,  // Suspension displacement (float) - FIXED!
+      frontBrakePressure, rearBrakePressure, gasPedalPercentage, beltTemperature))  // Pedal/brake data (int)
   {
     Serial.println("Fast logging failed");
   }
