@@ -336,19 +336,23 @@ void fastLogSD()
   if (!logFile) return;
   
   // Write data - fast operation (~1ms)
-  // Need to match header: 40 columns total
-  if (!logFile.printf("%s,%s,%s,%f,%i,%f,%i,%f,%f,%f,%f,%f,%f,%s,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%f,%f,%f,%f,%i,%i,%i,%i,%f,%f,%f,%f,%i,%i,%i,%i\n", 
+  // Format must match logSerial() output exactly
+  if (!logFile.printf("%s,%s,%s,%.3f,%i,%.3f,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.6f,%.6f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%i,%i,%i,%i\n", 
       hourString.c_str(), minuteString.c_str(), secondString.c_str(),  // Time strings
-      time_from_start, dataScreenshotFlag, batteryVoltage, batteryPercentage,  // System data
-      a.acceleration.x, a.acceleration.y, a.acceleration.z,  // Accelerometer (float)
-      g.gyro.x, g.gyro.y, g.gyro.z,  // Gyroscope (float)
-      latitudeDecimal.c_str(), longitudeDecimal.c_str(),  // GPS position (string)
+      time_from_start,  // float with 3 decimals
+      dataScreenshotFlag,  // int
+      batteryVoltage,  // float with 3 decimals
+      batteryPercentage,  // int
+      a.acceleration.x, a.acceleration.y, a.acceleration.z,  // Accelerometer (3 decimals each)
+      g.gyro.x, g.gyro.y, g.gyro.z,  // Gyroscope (3 decimals each)
+      gpsLatitude, gpsLongitude,  // GPS position (6 decimals each) - CHANGED from string to float
       hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity,  // GPS data (int)
       primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature,  // CVT data (int)
-      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed,  // Wheel speeds (float)
-      frontLeftWheelState, frontRightWheelState, rearLeftWheelState, rearRightWheelState,  // Wheel states (int)
-      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement,  // Suspension displacement (float) - FIXED!
-      frontBrakePressure, rearBrakePressure, gasPedalPercentage, beltTemperature))  // Pedal/brake data (int)
+      beltTemperature,  // Belt temp (int)
+      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed,  // Wheel speeds (3 decimals)
+      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement,  // Suspension (3 decimals)
+      frontBrakePressure, rearBrakePressure, gasPedalPercentage,  // Pedal/brake data (int)
+      sdLoggingActive))  // SD logging status (int) - THIS WAS MISSING!
   {
     Serial.println("Fast logging failed");
   }
@@ -414,7 +418,7 @@ void logSerial()
   // Accel data
   Serial.print(sepChar);
   Serial.print(a.acceleration.x, 3); // Accel X
-  Serial.print(sepChar);
+  Serial.print(sepChar);  
   Serial.print(a.acceleration.y, 3); // Accel Y
   Serial.print(sepChar);
   Serial.print(a.acceleration.z, 3); // Accel Z
