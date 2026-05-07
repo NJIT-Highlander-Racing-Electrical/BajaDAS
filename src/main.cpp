@@ -93,7 +93,7 @@ void readGPS();
 
 void parseGPGGA(String data);
 void parseGPRMC(String data);
-String convertToDecimalDegrees(const String &coordinate, bool isLatitude);
+String convertToDecimalDegrees(const String& coordinate, bool isLatitude);
 
 void logSerial();
 void createFileSD();
@@ -118,7 +118,7 @@ void setup()
   // setup connections to various modules
   setupGPS();
   setupSD();
-  setupLSM();
+  //setupLSM();
 
   // setup CAN
   setupCAN(DAS);
@@ -133,7 +133,7 @@ void loop()
   time_from_start = millis() / 1000.0;
 
   // read data from modules
-  readLSM();
+  //readLSM();
   readGPS();
   updateBatteryPercentage();
 
@@ -141,7 +141,7 @@ void loop()
   logSerial();
 
   // log data to SD with keep-file-open approach
-  if (sdLoggingActive)
+  if (true)
   {
     // Open file once and keep it open
     if (!fileCreated)
@@ -150,7 +150,7 @@ void loop()
       openLogFileOnce();
       fileCreated = true;
     }
-    
+
     // Fast logging to already-open file
     if (logFileIsOpen)
     {
@@ -244,7 +244,7 @@ void setupSD()
 void setupGPS() {
   Serial.println("Initializing GPS on Serial2 at 9600 bps");
   GPS_Serial.begin(9600, SERIAL_8N1, 16, 17); // Start at 9600 default
-  
+
   delay(1000); // Give GPS module time to wake up
 
   // Step 1: Tell GPS to switch to 57600 baud
@@ -283,14 +283,14 @@ void createFileSD()
     filePath = String(logFilePath);
     filenameIsDescriptive = false;
   }
-  
+
   // Create file and write header if new
   File tempFile = SD.open(filePath, FILE_APPEND);
   if (tempFile)
   {
     dasError = false;
     Serial.printf("Created log file: %s\n", filePath.c_str());
-    
+
     // Write CSV header only if file is new (empty)
     if (tempFile.size() == 0)
     {
@@ -299,7 +299,7 @@ void createFileSD()
         Serial.println("Failed to write header");
       }
     }
-    
+
     tempFile.close();
   }
   else
@@ -319,7 +319,7 @@ void openLogFileOnce()
   {
     logFile = SD.open(logFilePath, FILE_APPEND);
   }
-  
+
   if (logFile)
   {
     logFileIsOpen = true;
@@ -334,29 +334,29 @@ void openLogFileOnce()
 void fastLogSD()
 {
   if (!logFile) return;
-  
+
   // Write data - fast operation (~1ms)
   // Format must match logSerial() output exactly
-  if (!logFile.printf("%s,%s,%s,%.3f,%i,%.3f,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.6f,%.6f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%i,%i,%i,%i\n", 
-      hourString.c_str(), minuteString.c_str(), secondString.c_str(),  // Time strings
-      time_from_start,  // float with 3 decimals
-      dataScreenshotFlag,  // int
-      batteryVoltage,  // float with 3 decimals
-      batteryPercentage,  // int
-      a.acceleration.x, a.acceleration.y, a.acceleration.z,  // Accelerometer (3 decimals each)
-      g.gyro.x, g.gyro.y, g.gyro.z,  // Gyroscope (3 decimals each)
-      gpsLatitude, gpsLongitude,  // GPS position (6 decimals each) - CHANGED from string to float
-      hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity,  // GPS data (int)
-      primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature,  // CVT data (int)
-      beltTemperature,  // Belt temp (int)
-      frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed,  // Wheel speeds (3 decimals)
-      frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement,  // Suspension (3 decimals)
-      frontBrakePressure, rearBrakePressure, gasPedalPercentage,  // Pedal/brake data (int)
-      sdLoggingActive))  // SD logging status (int) - THIS WAS MISSING!
+  if (!logFile.printf("%s,%s,%s,%.3f,%i,%.3f,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.6f,%.6f,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%i,%i,%i,%i\n",
+    hourString.c_str(), minuteString.c_str(), secondString.c_str(),  // Time strings
+    time_from_start,  // float with 3 decimals
+    dataScreenshotFlag,  // int
+    batteryVoltage,  // float with 3 decimals
+    batteryPercentage,  // int
+    a.acceleration.x, a.acceleration.y, a.acceleration.z,  // Accelerometer (3 decimals each)
+    g.gyro.x, g.gyro.y, g.gyro.z,  // Gyroscope (3 decimals each)
+    gpsLatitude, gpsLongitude,  // GPS position (6 decimals each) - CHANGED from string to float
+    hasFix, sats, gpsAltitude, gpsHeading, gpsVelocity,  // GPS data (int)
+    primaryRPM, secondaryRPM, primaryTemperature, secondaryTemperature,  // CVT data (int)
+    beltTemperature,  // Belt temp (int)
+    frontLeftWheelSpeed, frontRightWheelSpeed, rearLeftWheelSpeed, rearRightWheelSpeed,  // Wheel speeds (3 decimals)
+    frontLeftDisplacement, frontRightDisplacement, rearLeftDisplacement, rearRightDisplacement,  // Suspension (3 decimals)
+    frontBrakePressure, rearBrakePressure, gasPedalPercentage,  // Pedal/brake data (int)
+    sdLoggingActive))  // SD logging status (int) - THIS WAS MISSING!
   {
     Serial.println("Fast logging failed");
   }
-  
+
   // Periodic flush for power-loss protection
   unsigned long currentTime = millis();
   if (currentTime - lastFlush >= FLUSH_INTERVAL)
@@ -418,7 +418,7 @@ void logSerial()
   // Accel data
   Serial.print(sepChar);
   Serial.print(a.acceleration.x, 3); // Accel X
-  Serial.print(sepChar);  
+  Serial.print(sepChar);
   Serial.print(a.acceleration.y, 3); // Accel Y
   Serial.print(sepChar);
   Serial.print(a.acceleration.z, 3); // Accel Z
@@ -567,7 +567,7 @@ void updateBatteryPercentage()
     else
       batteryPercentage = 0; // Below 10.5V is over-discharged
 
-      lastBatteryCheckMillis = millis();
+    lastBatteryCheckMillis = millis();
 
   }
 }
@@ -626,7 +626,7 @@ void setNextAvailableFilePath()
 }
 
 // Function to convert string NMEA data from GPS into usable decimal degrees format
-String convertToDecimalDegrees(const String &coordinate, bool isLatitude)
+String convertToDecimalDegrees(const String& coordinate, bool isLatitude)
 {
   int degreesLength = isLatitude ? 2 : 3; // Determine the number of degrees (DD or DDD)
 
