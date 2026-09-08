@@ -25,3 +25,6 @@ This project was started in 2023 as the first part of our whole-vehicle data acq
 
 ## System Capabilities
 - Data logging via MicroSD card (data is stored in a .csv file)
+- Adafruit Ultimate GPS
+- Battery Level Sensing
+- IMU
