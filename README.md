@@ -2,9 +2,11 @@
 
 ## PlatformIO 
 
-1. Install `Visual Studio Code`.
-2. Install the `PlatformIO IDE` and `GitHub Repositories` extensions.
-3. From a new window, click on `Clone Git Repository` and follow prompts to download a local copy of the code.
+1. Software Dependencies:
+   - `Visual Studio Code` with `PlatformIO IDE` extension
+   - `Git` (if editing)
+   - `GitHub Desktop App` (recommended for repository organization)
+4. Clone the repository and open the project. If PlatformIO IDE is installed, it should recognize the project and automatically initialize the extension.
 
 ## Quick Start
 
@@ -16,3 +18,10 @@
 ## Troubleshooting
 
 - The main config file is `platformio.ini`.
+- Avoid hotswapping MicroSD cards. While the code is set up to automatically detect a card when inserted, the code is very buggy. Always power cycle the system after inserting a new card.
+
+# About BajaDAS
+This project was started in 2023 as the first part of our whole-vehicle data acquisition (DAQ) system. It serves as the central data logger, with a few onboard sensors. It is not, however, required by or special on the CAN system.
+
+## System Capabilities
+- Data logging via MicroSD card (data is stored in a .csv file)
